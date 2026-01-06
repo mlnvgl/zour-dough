@@ -1,0 +1,55 @@
+# Zig build outputs and caches
+zig-cache/
+zig-out/
+.zig-out/
+build/
+build-*/
+
+# Zig object/header outputs (if you emit them into repo build dirs)
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+
+# Linker / binary outputs
+*.elf
+*.bin
+*.hex
+*.uf2
+*.map
+*.lst
+
+# CMake / Ninja build artifacts (if using Pico SDK / CMake)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+build-pico/
+_ninja/
+*.ninja
+
+# PlatformIO (if used)
+.pio/
+.pioenvs/
+
+# IDE / Editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Temporary/editor swap / backup files
+*~
+*.swp
+*.swo
+
+# macOS / Windows cruft
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
