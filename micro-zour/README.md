@@ -12,17 +12,19 @@ Firmware for RP2040 (Raspberry Pi Pico) that reads temperature and humidity from
 
 ## LED Blinking Pattern
 
-The LED on GPIO25 indicates the sensor status:
+The LED on GPIO25 clearly indicates the sensor status:
 
-### Rapid Blink (Success)
-- **Pattern**: 100ms ON, 100ms OFF, then 1.5 seconds pause
-- **Meaning**: DHT22 sensor successfully read temperature and humidity values
+### Success - 3 Rapid Blinks
+- **Pattern**: 3 quick flashes (150ms ON, 150ms OFF each), then 1 second pause
+- **Meaning**: DHT22 sensor successfully read temperature and humidity
 - **Cycle**: Repeats every ~2 seconds
+- **Visual**: Easy to count—you'll see "blink, blink, blink"
 
-### Slow Pause (Error)
-- **Pattern**: 500ms pause, then 1.5 seconds pause
-- **Meaning**: DHT22 sensor failed to read data (timeout, bad checksum, or no response)
-- **Cycle**: Repeats every ~2 seconds
+### Error - 1 Long Slow Blink
+- **Pattern**: 1 second ON, 1 second OFF
+- **Meaning**: DHT22 sensor failed (timeout, bad checksum, or no response)
+- **Cycle**: Repeats every 2 seconds
+- **Visual**: Very obvious—one long slow pulse
 
 ## Building & Flashing
 
@@ -44,8 +46,8 @@ The Pico auto-flashes and reboots—firmware is now running!
 
 ## Sensor Status
 
-- **Rapid blink** = ✅ Temperature and humidity readings are being captured
-- **Slow pause** = ❌ Sensor communication failed
+- **3 quick blinks** = ✅ Sensor reading successful
+- **1 long slow blink** = ❌ Sensor communication failed
 
 ## Future Enhancements
 

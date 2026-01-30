@@ -147,22 +147,26 @@ pub fn main() !void {
     var sensor = DHT22Sensor.init(pins.dht22);
 
     while (true) {
-        pins.led.toggle();
-
         if (sensor.read()) |reading| {
             // Successfully read sensor
-            // reading.temperature and reading.humidity contain the values
             _ = reading;
 
-            // Blink LED rapidly on success
-            time.sleep_ms(100);
-            pins.led.toggle();
-            time.sleep_ms(100);
-        } else |_| {
-            // Handle error - slow blink on error
-            time.sleep_ms(500);
-        }
+            // Success: 3 rapid blinks (easy to count)
+            for (0..3) |_| {
+                pins.led.put(1);
+                time.sleep_ms(150);
+                pins.led.put(0);
+                time.sleep_ms(150);
+            }
 
-        time.sleep_ms(1500); // DHT22 needs ~2 seconds between reads
+            // Pause before next read
+            time.sleep_ms(1000);
+        } else |_| {
+            // Error: 1 long slow blink (1s on, 1s off)
+            pins.led.put(1);
+            time.sleep_ms(1000);
+            pins.led.put(0);
+            time.sleep_ms(1000);
+        }
     }
 }
