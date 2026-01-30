@@ -136,20 +136,40 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
         .name = "dht22",
         .direction = .in,
     },
+    .GPIO12 = .{
+        .name = "heater",
+        .direction = .out,
+    },
 };
 
 const pins = pin_config.pins();
+
+// Temperature control constants
+const MAX_TEMP: f32 = 25.0; // Celsius - turn heater off
+const MIN_TEMP: f32 = 23.9; // Celsius - turn heater on
+const CHECK_INTERVAL_MS: u32 = 2000; // Milliseconds between checks
 
 pub fn main() !void {
     pin_config.apply();
 
     const DHT22Sensor = DHT22(@TypeOf(pins.dht22));
     var sensor = DHT22Sensor.init(pins.dht22);
+    var heater_is_on: bool = false; // Track if heater is on
 
     while (true) {
         if (sensor.read()) |reading| {
             // Successfully read sensor
-            _ = reading;
+
+            // Temperature control logic with hysteresis
+            if (reading.temperature >= MAX_TEMP) {
+                heater_is_on = false; // Turn OFF
+            } else if (reading.temperature <= MIN_TEMP) {
+                heater_is_on = true; // Turn ON
+            }
+            // If between MIN_TEMP and MAX_TEMP, keep previous state
+
+            // Apply heater state
+            pins.heater.put(if (heater_is_on) @as(u1, 1) else @as(u1, 0));
 
             // Success: 3 rapid blinks (easy to count)
             for (0..3) |_| {
@@ -160,9 +180,11 @@ pub fn main() !void {
             }
 
             // Pause before next read
-            time.sleep_ms(1000);
+            time.sleep_ms(CHECK_INTERVAL_MS);
         } else |_| {
             // Error: 1 long slow blink (1s on, 1s off)
+            heater_is_on = false; // Turn off heater on error
+            pins.heater.put(0);
             pins.led.put(1);
             time.sleep_ms(1000);
             pins.led.put(0);
