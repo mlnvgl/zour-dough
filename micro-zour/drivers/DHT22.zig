@@ -1,3 +1,5 @@
+// This is work in progress and not working yet.
+
 const microzig = @import("microzig");
 const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
