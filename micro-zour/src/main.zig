@@ -1,84 +1,75 @@
 const std = @import("std");
 const microzig = @import("microzig");
-const rp2xxx = microzig.hal;
-const time = rp2xxx.time;
-const dht22 = @import("dht22.zig");
-const DHT22 = dht22.DHT22;
+const rp = microzig.hal;
+const DS18B20 = @import("../drivers/DS18B20.zig").DS18B20;
 
-// Compile-time pin configuration
-const pin_config = rp2xxx.pins.GlobalConfiguration{
-    .GPIO25 = .{
-        .name = "led",
-        .direction = .out,
-    },
-    .GPIO22 = .{
-        .name = "dht22",
-        .direction = .in,
-    },
-    .GPIO12 = .{
-        .name = "heater",
-        .direction = .out,
-    },
-};
+const HEATER_PIN = rp.pins.p15;
+const HEATER_ACTIVE_HIGH = false; // Set to true if HIGH turns the heater ON, false if LOW turns it ON
 
-const pins = pin_config.pins();
+const SENSOR_PIN = rp.pins.p22;
 
-// Temperature control constants
-const MAX_TEMP: f32 = 25.0; // Celsius - turn heater off
-const MIN_TEMP: f32 = 23.9; // Celsius - turn heater on
-const CHECK_INTERVAL_MS: u32 = 2000; // Milliseconds between checks
+const TEMP_MIN = 20.0;
+const TEMP_MAX = 25.0;
 
-// Most MOSFET modules are active-low (GPIO low = ON). Set to true if yours is active-high.
-const HEATER_ACTIVE_HIGH: bool = false;
-
-fn set_heater(on: bool) void {
-    const pin_level: u1 = if (on == HEATER_ACTIVE_HIGH) @as(u1, 1) else @as(u1, 0);
-    pins.heater.put(pin_level);
-}
+var gpa = rp.gpa;
+var timer = rp.timer;
 
 pub fn main() !void {
-    pin_config.apply();
+    rp.init();
+    timer.init();
 
-    // Default safe state: heater OFF
-    set_heater(false);
+    // --- Heater setup ---
+    const heater_pin = rp.gpio.init(HEATER_PIN, .{ .mode = .output });
+    defer heater_pin.deinit();
 
-    const DHT22Sensor = DHT22(@TypeOf(pins.dht22));
-    var sensor = DHT22Sensor.init(pins.dht22);
-    var heater_is_on: bool = false; // Track if heater is on
+    // --- Sensor setup ---
+    const sensor_io = rp.gpio.init(SENSOR_PIN, .{ .mode = .input });
+    defer sensor_io.deinit();
 
+    var sensor = try DS18B20.init(&sensor_io, &timer);
+
+    // --- Main loop ---
     while (true) {
-        if (sensor.read()) |reading| {
-            // Successfully read sensor
+        // It's good practice to reset the bus before each command
+        if (sensor.reset()) |_| {
+            // 1. Tell the sensor to start converting the temperature.
+            //    We use `skip_rom` because we only have one sensor on the bus.
+            try sensor.convert_t(null);
 
-            // Temperature control logic with hysteresis
-            if (reading.temperature >= MAX_TEMP) {
-                heater_is_on = false; // Turn OFF
-            } else if (reading.temperature <= MIN_TEMP) {
-                heater_is_on = true; // Turn ON
+            // 2. Wait for the conversion to complete.
+            //    For 12-bit resolution (the default), this can take up to 750ms.
+            timer.sleep_ms(800);
+
+            // 3. Reset again before reading the result.
+            if (sensor.reset()) |_| {
+                // 4. Read the temperature.
+                const temp = try sensor.read_temperature(null);
+                std.log.info("Current temperature: {d:.2}°C", .{temp});
+
+                // 5. Control the heater based on the temperature.
+                if (temp < TEMP_MIN) {
+                    set_heater(true);
+                    std.log.info("Temperature below {d:.1}°C. Turning heater ON", .{TEMP_MIN});
+                } else if (temp > TEMP_MAX) {
+                    set_heater(false);
+                    std.log.info("Temperature above {d:.1}°C. Turning heater OFF", .{TEMP_MAX});
+                }
+            } else {
+                std.log.err("DS18B20 sensor not found after conversion.", .{});
             }
-            // If between MIN_TEMP and MAX_TEMP, keep previous state
-
-            // Apply heater state
-            set_heater(heater_is_on);
-
-            // Success: 3 rapid blinks (easy to count)
-            for (0..3) |_| {
-                pins.led.put(1);
-                time.sleep_ms(150);
-                pins.led.put(0);
-                time.sleep_ms(150);
-            }
-
-            // Pause before next read
-            time.sleep_ms(CHECK_INTERVAL_MS);
-        } else |_| {
-            // Error: 1 long slow blink (1s on, 1s off)
-            heater_is_on = false; // Turn off heater on error
-            set_heater(false);
-            pins.led.put(1);
-            time.sleep_ms(1000);
-            pins.led.put(0);
-            time.sleep_ms(1000);
+        } else {
+            std.log.err("DS18B20 sensor not found before conversion.", .{});
         }
+
+        timer.sleep_ms(2000);
+    }
+}
+
+fn set_heater(on: bool) void {
+    const heater_pin = rp.gpio.get_pin(HEATER_PIN);
+    if (on) {
+        heater_pin.put(if (HEATER_ACTIVE_HIGH) .high else .low);
+    } else {
+        heater_pin.put(if (HEATER_ACTIVE_HIGH) .low else .high);
     }
 }
