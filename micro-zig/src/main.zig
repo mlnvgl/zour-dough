@@ -4,9 +4,9 @@ const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
 const DS18B20 = microzig.drivers.sensor.DS18B20;
 
-// const gpio = rp2xxx.gpio;
-// const uart = rp2xxx.uart.instance.num(0);
-// const uart_tx_pin = gpio.num(0);
+const gpio = rp2xxx.gpio;
+const uart = rp2xxx.uart.instance.num(0);
+const uart_tx_pin = gpio.num(0);
 
 // Compile-time pin configuration
 const pin_config = rp2xxx.pins.GlobalConfiguration{
@@ -25,19 +25,19 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
     },
 };
 
-// pub const microzig_options = microzig.Options{
-//     .log_level = .debug,
-//     .logFn = rp2xxx.uart.log,
-// };
+pub const microzig_options = microzig.Options{
+    .log_level = .debug,
+    .logFn = rp2xxx.uart.log,
+};
 
 pub fn main() !void {
     const pins = pin_config.apply();
     var status: u1 = 0;
 
-    // var ds18b20_gpio = rp2xxx.drivers.GPIO_Device.init(pins.ds18b20);
-    // const clock_device = rp2xxx.drivers.clock_device();
+    //var ds18b20_gpio = rp2xxx.drivers.GPIO_Device.init(pins.ds18b20);
+    //const clock_device = rp2xxx.drivers.clock_device();
 
-    // const ds18b20 = try DS18B20.init(ds18b20_gpio.digital_io(), clock_device);
+    // _ = try DS18B20.init(ds18b20_gpio.digital_io(), clock_device);
 
     // set desired resolution
     //try ds18b20.write_config(.{ .resolution = .sixteenth_degree_12 });
@@ -48,14 +48,14 @@ pub fn main() !void {
         time.sleep_ms(2500);
         status = 1 - status; // Toggle between 0 and 1
 
-        //try ds18b20.initiate_temperature_conversion(.{});
+        // try ds18b20.initiate_temperature_conversion(.{});
 
         // wait for conversion to complete (depends on resolution)
-        time.sleep_ms(750);
+        // time.sleep_ms(750);
 
         // read temperature
         //const temperature = try ds18b20.read_temperature(.{});
-        //std.log.info("what {any}", .{temperature});
+        std.log.info("{s}", .{"ping"});
 
         // if (temperature > 25.0) {
         //     std.debug.print("Temperature is above 25°C: {d}°C\n", .{temperature});
