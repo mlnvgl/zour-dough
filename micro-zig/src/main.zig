@@ -1,27 +1,21 @@
 const std = @import("std");
-const micro_zig = @import("micro_zig");
+const microzig = @import("microzig");
+const rp2xxx = microzig.hal;
+const time = rp2xxx.time;
+
+// Compile-time pin configuration
+const pin_config = rp2xxx.pins.GlobalConfiguration{
+    .GPIO25 = .{
+        .name = "led",
+        .direction = .out,
+    },
+};
 
 pub fn main() !void {
-    // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try micro_zig.bufferedPrint();
-}
+    const pins = pin_config.apply();
 
-test "simple test" {
-    const gpa = std.testing.allocator;
-    var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(gpa, 42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
-
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
-        }
-    };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+    while (true) {
+        pins.led.toggle();
+        time.sleep_ms(250);
+    }
 }
