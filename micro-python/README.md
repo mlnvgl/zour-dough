@@ -4,7 +4,7 @@
 
 If you haven't already:
 
-1. Download the MicroPython UF2 file for RP2040 from [micropython.org](https://micropython.org)
+1. Download the MicroPython UF2 file for RP2040 from [micropython.org](https://micropython.org). It is stored here under firmware folder named RPI_PICO-20251209-v1.27.0.uf2
 2. Hold the BOOTSEL button on your RP2040 while plugging it into your computer
 3. It will appear as a USB drive - drag the UF2 file onto it
 4. It will reboot with MicroPython installed
