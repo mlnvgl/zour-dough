@@ -103,8 +103,6 @@ pub fn main() !void {
                 i += 1;
                 std.log.info("cdc test: {}", .{i});
 
-                usb_cdc_write(&drivers.serial, "Status is {}\r\n", .{status});
-
                 if (ds18b20) |*sensor| {
                     sensor.initiate_temperature_conversion(.{}) catch |err| {
                         ds18b20_conversion_err = err;
@@ -118,13 +116,15 @@ pub fn main() !void {
 
                 // wait for conversion to complete
                 time.sleep_ms(750);
-                usb_cdc_write(&drivers.serial, "test {}\r\n", .{i});
-                // const temp = ds18b20.read_temperature(.{}) catch |err| {
-                //     std.log.err("could not read ds18b20 temperature: {any}", .{err});
-                //     return;
-                // };
 
-                // std.log.info("temperature: {d:.2}", .{temp});
+                if (ds18b20) |*sensor| {
+                    const temp = sensor.read_temperature(.{}) catch |err| {
+                        usb_cdc_write(&drivers.serial, "could not read ds18b20 temperature: {any}\r\n", .{err});
+                        return;
+                    };
+
+                    usb_cdc_write(&drivers.serial, "ds18b20 temperature: {d} C\r\n", .{temp});
+                }
             }
 
             // read and print host command if present
