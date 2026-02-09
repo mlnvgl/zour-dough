@@ -58,7 +58,8 @@ const pin_config: rp2xxx.pins.GlobalConfiguration = .{
 
 pub fn main() !void {
     const pins = pin_config.apply();
-    const status: u1 = 0;
+    // status for heater for later
+    // const status: u1 = 0;
 
     const uart = rp2xxx.uart.instance.num(0);
     uart.apply(.{
