@@ -1,6 +1,6 @@
-# MicroPython
+# Zour-Dough in MicroPython
 
-## Step 1: Install MicroPython on Your RP2040
+## Step 1: Install MicroPython on Your RP2035
 
 If you haven't already:
 
