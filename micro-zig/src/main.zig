@@ -54,12 +54,29 @@ const pin_config: rp2xxx.pins.GlobalConfiguration = .{
         .direction = .in,
         .pull = .up,
     },
+    .GPIO21 = .{
+        .name = "heater",
+        .direction = .out,
+    },
 };
+
+pub fn blink(led: anytype, times: u32, on_ms: u32, off_ms: u32) void {
+    var i: u32 = 0;
+    while (i < times) : (i += 1) {
+        led.put(1);
+        time.sleep_ms(on_ms);
+        led.put(0);
+        time.sleep_ms(off_ms);
+    }
+}
 
 pub fn main() !void {
     const pins = pin_config.apply();
-    // status for heater for later
-    // const status: u1 = 0;
+
+    const max_temp = 25; // Celsius - turn heater off
+    const min_temp = 23; // Celsius - turn heater on
+    const check_interval_seconds = 3; // Seconds between temperature checks
+    const conversion_time_ms = 750; // Time it takes for DS18B20 to perform a temperature conversion
 
     const uart = rp2xxx.uart.instance.num(0);
     uart.apply(.{
@@ -67,7 +84,11 @@ pub fn main() !void {
     });
     rp2xxx.uart.init_logger(uart);
 
+    // status for pins
+    pins.heater.put(0);
     pins.led.put(1);
+    // quick 3x fast blink to indicate startup/activity
+    blink(pins.led, 3, 40, 40);
 
     // Then initialize the USB device using the configuration defined above
     usb_device = .init();
@@ -95,6 +116,7 @@ pub fn main() !void {
         if (usb_controller.drivers()) |drivers| {
             if (ds18b20_init_err) |err| {
                 usb_cdc_write(&drivers.serial, "ds18b20 init failed: {any}\r\n", .{err});
+                pins.led.put(0);
                 ds18b20_init_err = null;
             }
             new = time.get_time_since_boot().to_us();
@@ -116,13 +138,26 @@ pub fn main() !void {
                 }
 
                 // wait for conversion to complete
-                time.sleep_ms(750);
+                time.sleep_ms(conversion_time_ms);
 
                 if (ds18b20) |*sensor| {
                     const temp = sensor.read_temperature(.{}) catch |err| {
                         usb_cdc_write(&drivers.serial, "could not read ds18b20 temperature: {any}\r\n", .{err});
+                        pins.led.put(0);
                         return;
                     };
+
+                    if (temp >= max_temp) {
+                        pins.led.put(1);
+                        blink(pins.led, 5, 40, 40);
+                        pins.heater.put(0);
+                    } else if (temp <= min_temp) {
+                        pins.heater.put(1);
+                        blink(pins.led, 10, 400, 400);
+                    } else {
+                        // perfect temperature between min and max, do not heat
+                        pins.heater.put(0);
+                    }
 
                     usb_cdc_write(&drivers.serial, "ds18b20 temperature: {d} C\r\n", .{temp});
                 }
@@ -134,6 +169,7 @@ pub fn main() !void {
                 usb_cdc_write(&drivers.serial, "Your message to me was: {s}\r\n", .{message});
             }
         }
+        time.sleep_ms(check_interval_seconds * 1000);
     }
 }
 
