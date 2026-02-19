@@ -2,7 +2,8 @@
   "mode": "yolo",
   "depth": "quick",
   "parallelization": true,
-  "commit_docs": true,
+  "commit_docs": false,
+  "commit_code": false,
   "model_profile": "balanced",
   "workflow": {
     "research": true,
