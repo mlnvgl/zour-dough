@@ -7,10 +7,10 @@ import ubinascii
 data_pin = Pin(22)
 heater_pin = Pin(21, Pin.OUT)
 heater_pin.value(0)
+led_pin = Pin("LED", Pin.OUT)
 
-
-MAX_TEMP = 25  # Celsius - turn heater off
-MIN_TEMP = 23  # Celsius - turn heater on
+MAX_TEMP = 27.5  # Celsius - turn heater off
+MIN_TEMP = 27  # Celsius - turn heater on
 CHECK_INTERVAL = 3  # Seconds between temperature checks
 
 ow = onewire.OneWire(data_pin)
@@ -23,6 +23,7 @@ else:
 	print("Found {} sensor(s)".format(len(roms)))
 
 while True:
+	led_pin.value(1)
 	try:
 		ds.convert_temp()
 		time.sleep_ms(750)
@@ -33,12 +34,12 @@ while True:
 			if temp_c >= MAX_TEMP:
 				heater_pin.value(0)  # Heater OFF
 				print("Heater OFF")
-			elif temp_c <= MIN_TEMP:
+			elif temp_c < MIN_TEMP:
 				heater_pin.value(1)  # Heater ON
 				print("Heater ON")
-
-			print("PerfectCurrent Temperature of {:.2f} C".format(temp_c))
-
+			elif MIN_TEMP < temp_c < MAX_TEMP:
+				print("Temperature within range, no change to heater state")
+		
 		print("---")
 	except Exception as e:
 		print("Error: {}".format(e))
