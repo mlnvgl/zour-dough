@@ -20,5 +20,5 @@ Download and install [Thonny](https://thonny.org) - it's the easiest IDE for Mic
 
 # Hardware
 
-Temperature Sensors DHT22 and DS18B20
-Raspberry Pico 2 
+Temperature Sensor DS18B20
+Raspberry Pico 2 RP2035

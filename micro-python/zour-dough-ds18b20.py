@@ -63,7 +63,7 @@ async def measure_and_publish(client):
                         "temperature": temp_c,
                         "heater": heater_state
                     }
-                    topic = "zour-dough/ds18b20/{}".format(rom_id)
+                    topic = "sensors/ds18b20/{}".format(rom_id)
                     print("Publishing to {}: {}".format(topic, payload))
                     await client.publish(topic, json.dumps(payload), qos=1)
                 else:
@@ -81,8 +81,6 @@ async def main(client):
         await client.connect()
     except OSError:
         print('Connection failed')
-        # mqtt_as handles reconnection, so we can continue or return
-        # But usually we want the loop to run
     
     # Create the measurement task
     asyncio.create_task(measure_and_publish(client))
