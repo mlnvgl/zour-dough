@@ -2,7 +2,9 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2.0
     ports:
-      - "1883:1883"
+      - "0.0.0.0:1883:1883"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - mosquitto-data:/mosquitto/data

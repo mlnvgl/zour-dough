@@ -78,9 +78,14 @@ async def measure_and_publish(client):
 
 async def main(client):
     try:
+        import network
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
+        wlan.config(pm=0xa11140) # Disable power save (for CYW43 on Pico W)
+        print("Power save disabled")
         await client.connect()
-    except OSError:
-        print('Connection failed')
+    except OSError as e:
+        print('Connection failed with error: {}'.format(e))
     
     # Create the measurement task
     asyncio.create_task(measure_and_publish(client))
