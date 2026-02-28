@@ -53,4 +53,5 @@ Thumbs.db
 
 # Logs and temporary files
 *.log
-*.tmp
+*.tmpmicro-python/mqtt_local.py
+micro-python/.env
