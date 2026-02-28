@@ -62,7 +62,19 @@ This project uses Infrastructure as Code (IaC) to define the backend stack in `b
 - **Dashboard-as-Code:** The "Temperature Monitor" dashboard is defined in `backend/grafana/dashboards/main.json`, so it persists across container restarts.
 
 
-# Hardware
 
-- **Controller:** Raspberry Pi Pico 2 W (RP2350)
-- **Sensor:** DS18B20 Temperature Sensor
+# Maintenance
+
+### Checking Disk Usage
+The data (InfluxDB) and dashboards (Grafana) are stored in Docker volumes. To see how much space they are using:
+```bash
+docker system df -v | grep "backend_"
+```
+*Expected growth: ~100-200 MB per year for one sensor.*
+
+### Data Retention
+By default, the system keeps data **forever**. If you want to change this (e.g., to 1 year) for a *new* installation, add this to `backend/.env`:
+```bash
+DOCKER_INFLUXDB_INIT_RETENTION=52w
+```
+*(Note: This only affects new setups. For existing data, you must update the bucket retention policy via the InfluxDB CLI or UI.)*
