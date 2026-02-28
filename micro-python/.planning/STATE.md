@@ -1,8 +1,8 @@
 # Project State: IoT Temperature Monitor
 
-**Current Phase:** 2 - Core Firmware
-**Status:** In Progress
-**Plan:** Develop firmware for ESP32/Pico W to read sensor and publish to MQTT
+**Current Phase:** 3 - Visualization
+**Status:** Complete
+**Plan:** 03-01 (Complete)
 
 ## Context
 
@@ -10,32 +10,35 @@
 Reliable, continuous temperature logging and visualization over multiple days without manual data handling.
 
 **Current Focus:**
-Now that the backend is running (Phase 1 complete), we need to feed it data. Phase 2 focuses on the device firmware: reading the sensor and publishing to the MQTT broker we just set up.
+All core phases complete. System is fully operational: Sensor -> MQTT -> Telegraf -> InfluxDB -> Grafana.
 
 ## Progress
 
 | Phase | Status | Completion |
 |-------|--------|------------|
 | 1. Backend Infrastructure | **Complete** | 100% |
-| 2. Core Firmware | **Active** | 80% |
-| 3. Visualization | Planned | 0% |
+| 2. Core Firmware | **Complete** | 100% |
+| 3. Visualization | **Complete** | 100% |
 
 ## Recent Decisions
-- **2026-02-27:** Removed DHT22 support to focus exclusively on DS18B20 sensor.
-- **2026-02-27:** Integrated `mqtt_as` for robust asynchronous MQTT connectivity.
-- **2026-02-27:** Updated DS18B20 script to use `uasyncio` and `mqtt_as`.
-- **2026-02-19:** Verified backend stack with Docker Compose (Mosquitto, Telegraf, InfluxDB).
-- **2026-02-19:** Validated data path: MQTT -> Telegraf -> InfluxDB.
-- **2026-02-17:** Adopted 3-phase structure (Backend -> Firmware -> Vis) to validate data path early.
+- **2026-02-28:** Verified Grafana dashboard shows live data from `mqtt_consumer` measurement.
+- **2026-02-28:** Deployed Grafana 10.0.0 with automated provisioning (files, not UI).
+- **2026-02-28:** Enabled anonymous auth for Grafana for frictionless local access.
 
 ## Todo
-- [x] Create `docker-compose.yml` for Mosquitto, InfluxDB, Grafana
-- [x] Configure `telegraf.conf` to bridge MQTT -> InfluxDB
-- [x] Verify local MQTT connection (via Telegraf logs)
-- [x] Initialize firmware project (Phase 2)
-- [x] Implement sensor reading code (DS18B20)
-- [x] Implement MQTT publishing with `mqtt_as`
-- [ ] Test firmware on actual hardware (User Verification)
+- [x] Create `docker-compose.yml` for Mosquitto, InfluxDB, Grafana (Phase 1 & 3)
+- [x] Configure `telegraf.conf` to bridge MQTT -> InfluxDB (Phase 1)
+- [x] Implement sensor reading code (DS18B20) (Phase 2)
+- [x] Implement MQTT publishing with `mqtt_as` (Phase 2)
+- [x] Deploy Grafana service (Phase 3)
+- [x] Provision InfluxDB datasource in Grafana (Phase 3)
+- [x] Create default Dashboard JSON (Phase 3)
+- [x] Verify Dashboard shows live data (User Verification)
 
 ## Blockers
-- None currently.
+- None.
+
+## Session Continuity
+Last session: 2026-02-28
+Stopped at: Completed Phase 3 execution and verification.
+Resume file: None

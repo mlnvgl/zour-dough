@@ -1,9 +1,9 @@
 from mqtt_as import config
 
 # Local configuration
-config['ssid'] = 'YOUR_WIFI_SSID'  # Enter your WiFi SSID
-config['wifi_pw'] = 'YOUR_WIFI_PASSWORD'  # Enter your WiFi Password
-config['server'] = 'YOUR_MQTT_BROKER_IP'  # Enter your MQTT Broker IP (e.g., 192.168.1.100)
+config['ssid'] = 'tbs-mln-g'  # Enter your WiFi SSID
+config['wifi_pw'] = 'Alderson_31'  # Enter your WiFi Password
+config['server'] = '192.168.179.28'  # Enter your MQTT Broker IP (e.g., 192.168.1.100)
 config['port'] = 1883
 config['user'] = ''
 config['password'] = ''

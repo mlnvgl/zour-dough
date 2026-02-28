@@ -65,6 +65,9 @@ A 3-phase delivery path to build a reliable MicroPython temperature monitor. Foc
 2. User can view a historical graph of temperature data over the last 24 hours.
 3. Dashboard persists and reloads data correctly after a Docker container restart.
 
+**Plans:** 1 plan
+- [ ] 03-01-PLAN.md — Deploy Grafana & Dashboards
+
 ## Progress
 
 | Phase | Status | Requirements |
