@@ -63,6 +63,37 @@ This project uses Infrastructure as Code (IaC) to define the backend stack in `b
 
 
 
+
+# Architecture
+
+The system follows a classic **IoT Data Pipeline** pattern:
+
+```mermaid
+graph LR
+    subgraph Hardware
+        Pico[Pico W] -->|I2C| Sensor[DS18B20]
+    end
+
+    subgraph Backend
+        Pico -->|MQTT| Mosquitto[Mosquitto Broker]
+        Mosquitto -->|Sub| Telegraf[Telegraf Agent]
+        Telegraf -->|Write| InfluxDB[(InfluxDB)]
+        Grafana[Grafana] -->|Query| InfluxDB
+    end
+
+    subgraph User
+        Browser[Your Browser] -->|HTTP:3000| Grafana
+    end
+```
+
+**Data Flow:**
+1.  **Sensor:** Reads temperature every 10s.
+2.  **Pico W:** Publishes JSON to MQTT topic `sensors/ds18b20/<id>`.
+3.  **Mosquitto:** Receives message and holds it.
+4.  **Telegraf:** Subscribes to MQTT, converts JSON -> Influx Line Protocol.
+5.  **InfluxDB:** Stores time-series data.
+6.  **Grafana:** Queries InfluxDB to visualize history.
+
 # Maintenance
 
 ### Checking Disk Usage
