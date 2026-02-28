@@ -1,0 +1,12 @@
+from mqtt_as import config
+
+# Local configuration
+config['ssid'] = 'YOUR_WIFI_SSID'  # Enter your WiFi SSID
+config['wifi_pw'] = 'YOUR_WIFI_PASSWORD'  # Enter your WiFi Password
+config['server'] = 'YOUR_MQTT_BROKER_IP'  # Enter your MQTT Broker IP (e.g., 192.168.1.100)
+config['port'] = 1883
+config['user'] = ''
+config['password'] = ''
+config['keepalive'] = 60
+config['ping_interval'] = 0
+config['ssl'] = False
