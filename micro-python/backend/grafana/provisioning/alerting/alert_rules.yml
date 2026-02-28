@@ -1,0 +1,64 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: "Temperature Monitoring"
+    folder: "Alerts"
+    interval: 1m
+    rules:
+      - uid: temp_high_alert
+        title: "High Temperature Warning (>30°C)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: "P1809F7CD0C757532"
+            model:
+              refId: A
+              query: |
+                from(bucket: "${DOCKER_INFLUXDB_INIT_BUCKET}")
+                  |> range(start: -5m)
+                  |> filter(fn: (r) => r["_measurement"] == "mqtt_consumer")
+                  |> filter(fn: (r) => r["_field"] == "temperature")
+                  |> last()
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+              expression: A
+              type: reduce
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params: [30]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: ["C"]
+                  reducer:
+                    params: []
+                    type: last
+              expression: B
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Temperature is too high! Current value: {{ $values.B.Value }}°C"
+          description: "The temperature sensor reports a value above 30°C."
+        labels:
+          severity: critical
