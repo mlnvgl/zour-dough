@@ -38,6 +38,29 @@ If you haven't already:
 
 Download and install [Thonny](https://thonny.org) - it's the easiest IDE for MicroPython beginners. It lets you write code and see the console output.
 
+## Step 5: Start the Backend (Infrastructure as Code)
+
+This project uses Infrastructure as Code (IaC) to define the backend stack in `backend/docker-compose.yml`. This means you can spin up the entire system (MQTT Broker, Database, Dashboard) with a single command, and it will be configured exactly as defined in the code.
+
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Start the services:
+   ```bash
+   docker compose up -d
+   ```
+
+**What runs:**
+- **Mosquitto:** MQTT Broker (Receives sensor data)
+- **Telegraf:** Data Collector (Bridges MQTT -> InfluxDB)
+- **InfluxDB:** Time-Series Database (Stores temperature history)
+- **Grafana:** Visualization Dashboard (Displays charts at http://localhost:3000)
+
+**IaC Features:**
+- **Automated Provisioning:** Grafana automatically connects to InfluxDB on startup using config files in `backend/grafana/provisioning/`.
+- **Dashboard-as-Code:** The "Temperature Monitor" dashboard is defined in `backend/grafana/dashboards/main.json`, so it persists across container restarts.
+
 
 # Hardware
 
