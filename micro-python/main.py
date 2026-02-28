@@ -13,14 +13,27 @@ import mqtt_local # Import local config to update the global config
 # However, to be safe, we can manually update if needed, but since mqtt_local imports config
 # and modifies it, it should be fine.
 
+# Load application config
+try:
+    with open('config.json') as f:
+        app_config = json.load(f)
+    print("Loaded config.json:", app_config)
+except Exception as e:
+    print("Error loading config.json, using defaults:", e)
+    app_config = {
+        "temp_min": 27.0,
+        "temp_max": 27.5,
+        "check_interval": 10
+    }
+
 data_pin = Pin(22)
 heater_pin = Pin(21, Pin.OUT)
 heater_pin.value(0)
 led_pin = Pin("LED", Pin.OUT)
 
-MAX_TEMP = 27.5  # Celsius - turn heater off
-MIN_TEMP = 27  # Celsius - turn heater on
-CHECK_INTERVAL = 3  # Seconds between temperature checks
+MAX_TEMP = app_config.get("temp_max", 27.5)  # Celsius - turn heater off
+MIN_TEMP = app_config.get("temp_min", 27.0)  # Celsius - turn heater on
+CHECK_INTERVAL = app_config.get("check_interval", 10)  # Seconds between temperature checks
 
 ow = onewire.OneWire(data_pin)
 ds = ds18x20.DS18X20(ow)
