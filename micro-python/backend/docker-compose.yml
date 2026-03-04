@@ -16,7 +16,7 @@ services:
     ports:
       - "8086:8086"
     env_file:
-      - .env
+      - stack.env
     volumes:
       - influxdb-data:/var/lib/influxdb2
     networks:
@@ -25,7 +25,7 @@ services:
   telegraf:
     image: telegraf:1.29
     env_file:
-      - .env
+      - stack.env
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
     depends_on:
@@ -47,7 +47,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     env_file:
-      - .env
+      - stack.env
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
