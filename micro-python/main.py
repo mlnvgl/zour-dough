@@ -4,6 +4,7 @@ import ds18x20
 import uasyncio as asyncio
 import ubinascii
 import json
+import network
 from mqtt_as import MQTTClient, config
 import mqtt_local # Import local config to update the global config
 
@@ -43,6 +44,92 @@ if not roms:
     print("No DS18B20 sensors found on GPIO22")
 else:
     print("Found {} sensor(s)".format(len(roms)))
+
+
+def wifi_status_text(wlan):
+    status_map = {
+        getattr(network, "STAT_IDLE", 0): "IDLE",
+        getattr(network, "STAT_CONNECTING", 1): "CONNECTING",
+        2: "CONNECTING_NO_IP",
+        getattr(network, "STAT_WRONG_PASSWORD", -3): "WRONG_PASSWORD",
+        getattr(network, "STAT_NO_AP_FOUND", -2): "NO_AP_FOUND",
+        getattr(network, "STAT_CONNECT_FAIL", -1): "CONNECT_FAIL",
+        getattr(network, "STAT_GOT_IP", 3): "GOT_IP",
+    }
+    code = wlan.status()
+    return "{} ({})".format(status_map.get(code, "UNKNOWN"), code)
+
+
+def set_wifi_country_from_config():
+    wifi_country = config.get('wifi_country')
+    if not wifi_country:
+        return
+    try:
+        import rp2
+        rp2.country(wifi_country)
+        print("Wi-Fi country set to '{}'".format(wifi_country))
+    except Exception as e:
+        print("Could not set Wi-Fi country '{}': {}".format(wifi_country, e))
+
+
+def print_visible_ssids(wlan):
+    try:
+        networks = wlan.scan()
+    except Exception as e:
+        print("Wi-Fi scan failed: {}".format(e))
+        return
+
+    ssids = []
+    for net in networks:
+        raw_ssid = net[0]
+        if isinstance(raw_ssid, bytes):
+            ssid = raw_ssid.decode('utf-8', 'ignore')
+        else:
+            ssid = str(raw_ssid)
+        if ssid and ssid not in ssids:
+            ssids.append(ssid)
+
+    if not ssids:
+        print("Visible SSIDs: none")
+        return
+
+    max_show = 10
+    print("Visible SSIDs ({}): {}".format(len(ssids), ", ".join(ssids[:max_show])))
+    if len(ssids) > max_show:
+        print("... and {} more".format(len(ssids) - max_show))
+
+
+async def connect_with_retry(client):
+    set_wifi_country_from_config()
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.config(pm=0xa11140)
+    print("Power save disabled")
+
+    attempt = 1
+    while True:
+        try:
+            print("Connect attempt {} to SSID '{}' and MQTT {}:{}".format(attempt, config['ssid'], config['server'], config['port']))
+            await client.connect()
+            if wlan.isconnected():
+                print("Wi-Fi connected: {}".format(wlan.ifconfig()))
+            print("MQTT connected")
+            return
+        except OSError as e:
+            print("Connection attempt {} failed: {}".format(attempt, e))
+            status = wlan.status()
+            print("Wi-Fi status: {}".format(wifi_status_text(wlan)))
+            if status == getattr(network, "STAT_NO_AP_FOUND", -2) and (attempt == 1 or attempt % 3 == 0):
+                print_visible_ssids(wlan)
+            if wlan.isconnected():
+                print("Wi-Fi still connected: {}".format(wlan.ifconfig()))
+            else:
+                try:
+                    wlan.disconnect()
+                except Exception:
+                    pass
+            attempt += 1
+            await asyncio.sleep(5)
 
 async def measure_and_publish(client):
     while True:
@@ -90,15 +177,7 @@ async def measure_and_publish(client):
         await asyncio.sleep(CHECK_INTERVAL)
 
 async def main(client):
-    try:
-        import network
-        wlan = network.WLAN(network.STA_IF)
-        wlan.active(True)
-        wlan.config(pm=0xa11140) # Disable power save (for CYW43 on Pico W)
-        print("Power save disabled")
-        await client.connect()
-    except OSError as e:
-        print('Connection failed with error: {}'.format(e))
+    await connect_with_retry(client)
     
     # Create the measurement task
     asyncio.create_task(measure_and_publish(client))

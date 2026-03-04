@@ -30,6 +30,7 @@ If you haven't already:
 2. Open `mqtt_local.py` and enter your WiFi and MQTT broker details:
    - `ssid`: Your WiFi Network Name
    - `wifi_pw`: Your WiFi Password
+   - `wifi_country` (optional): Two-letter country code, e.g. `DE`, `US`, `GB` (helps when AP uses region-specific channels)
    - `server`: IP Address of your computer running the MQTT broker (e.g. `192.168.1.50`)
 
 **Note:** Both `mqtt_local.py` and `backend/stack.env` are ignored by git to keep your passwords safe.
