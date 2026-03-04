@@ -36,8 +36,35 @@ services:
     image: telegraf:1.29
     env_file:
       - stack.env
-    volumes:
-      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    entrypoint:
+      - /bin/sh
+      - -ec
+    command:
+      - |
+        cat >/etc/telegraf/telegraf.conf <<'EOF'
+        [agent]
+          interval = "10s"
+          round_interval = true
+          metric_batch_size = 1000
+          metric_buffer_limit = 10000
+          collection_jitter = "0s"
+          flush_interval = "10s"
+          flush_jitter = "0s"
+          precision = ""
+          debug = true
+
+        [[inputs.mqtt_consumer]]
+          servers = ["tcp://mosquitto:1883"]
+          topics = ["sensors/#"]
+          data_format = "json"
+
+        [[outputs.influxdb_v2]]
+          urls = ["http://influxdb:8086"]
+          token = "$DOCKER_INFLUXDB_INIT_ADMIN_TOKEN"
+          organization = "zour_dough"
+          bucket = "sensors"
+        EOF
+        exec telegraf --config /etc/telegraf/telegraf.conf
     depends_on:
       - mosquitto
       - influxdb
