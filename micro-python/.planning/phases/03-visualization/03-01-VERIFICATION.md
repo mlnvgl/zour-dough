@@ -50,7 +50,7 @@ human_verification: []
 
 ### Anti-Patterns Found
 
-None found. Configuration is externalized to `.env` where appropriate, and provisioning is used instead of manual setup.
+None found. Configuration is externalized to `stack.env` where appropriate, and provisioning is used instead of manual setup.
 
 ### Gaps Summary
 

@@ -36,7 +36,7 @@ human_verification:
 | `backend/docker-compose.yml` | Stack orchestration | ✓ VERIFIED | Exists, substantive, defines services and networks correctly. |
 | `backend/mosquitto/config/mosquitto.conf` | Broker config | ✓ VERIFIED | Exists, substantive, allows anonymous access for dev. |
 | `backend/telegraf/telegraf.conf` | Data bridge | ✓ VERIFIED | Exists, substantive, correctly maps MQTT input to InfluxDB output. |
-| `backend/.env` | Environment secrets | ✓ VERIFIED | Exists, contains required InfluxDB init variables. |
+| `backend/stack.env` | Environment secrets | ✓ VERIFIED | Exists, contains required InfluxDB init variables. |
 
 ### Key Link Verification
 

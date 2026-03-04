@@ -20,7 +20,7 @@ tech-stack:
 key-files:
   created:
     - backend/docker-compose.yml
-    - backend/.env
+    - backend/stack.env
     - backend/mosquitto/config/mosquitto.conf
     - backend/telegraf/telegraf.conf
   modified: []
@@ -68,7 +68,7 @@ completed: 2026-02-19
 
 ## Files Created/Modified
 - `backend/docker-compose.yml` - Defines the multi-container application services.
-- `backend/.env` - Stores environment variables for InfluxDB initialization.
+- `backend/stack.env` - Stores environment variables for InfluxDB initialization.
 - `backend/mosquitto/config/mosquitto.conf` - Mosquitto broker configuration (anonymous access allowed for local dev).
 - `backend/telegraf/telegraf.conf` - Telegraf configuration for MQTT input and InfluxDB output.
 

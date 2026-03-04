@@ -4,7 +4,7 @@
 **Date:** 2026-02-28
 
 ## Achievements
-- [x] **Configurable Threshold:** Added `ALERT_THRESHOLD_TEMP=30` to `backend/.env`.
+- [x] **Configurable Threshold:** Added `ALERT_THRESHOLD_TEMP=30` to `backend/stack.env`.
 - [x] **Provisioned Alerts:** Created `backend/grafana/provisioning/alerting/alert_rules.yml` defining a "High Temperature" alert.
 - [x] **Contact Points:** Configured email and Discord placeholders in `backend/grafana/provisioning/alerting/contact_points.yml`.
 

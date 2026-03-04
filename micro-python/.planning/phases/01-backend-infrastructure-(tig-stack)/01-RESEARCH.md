@@ -45,7 +45,7 @@ backend/
 ├── telegraf/
 │   └── telegraf.conf
 ├── docker-compose.yml
-└── .env
+└── stack.env
 ```
 
 ### Pattern 1: Container Orchestration
