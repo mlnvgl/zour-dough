@@ -1,4 +1,5 @@
 mqtt_local.py
 .env
+stack.env
 __pycache__/
 venv/

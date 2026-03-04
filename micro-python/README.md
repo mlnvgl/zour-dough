@@ -18,9 +18,9 @@ If you haven't already:
 ### Backend Secrets
 1. Copy the example environment file:
    ```bash
-   cp backend/.env.example backend/.env
+   cp backend/.env.example backend/stack.env
    ```
-2. Update `backend/.env` with your secure credentials.
+2. Update `backend/stack.env` with your secure credentials.
 
 ### Firmware Secrets
 1. Copy the example configuration file:
@@ -32,7 +32,7 @@ If you haven't already:
    - `wifi_pw`: Your WiFi Password
    - `server`: IP Address of your computer running the MQTT broker (e.g. `192.168.1.50`)
 
-**Note:** Both `mqtt_local.py` and `backend/.env` are ignored by git to keep your passwords safe.
+**Note:** Both `mqtt_local.py` and `backend/stack.env` are ignored by git to keep your passwords safe.
 
 ## Step 4: Install Thonny IDE
 
@@ -48,7 +48,7 @@ This project uses Infrastructure as Code (IaC) to define the backend stack in `b
    ```
 2. Start the services:
    ```bash
-   docker compose up -d
+   docker compose --env-file stack.env up -d
    ```
 
 **What runs:**
@@ -104,7 +104,7 @@ docker system df -v | grep "backend_"
 *Expected growth: ~100-200 MB per year for one sensor.*
 
 ### Data Retention
-By default, the system keeps data **forever**. If you want to change this (e.g., to 1 year) for a *new* installation, add this to `backend/.env`:
+By default, the system keeps data **forever**. If you want to change this (e.g., to 1 year) for a *new* installation, add this to `backend/stack.env`:
 ```bash
 DOCKER_INFLUXDB_INIT_RETENTION=52w
 ```
