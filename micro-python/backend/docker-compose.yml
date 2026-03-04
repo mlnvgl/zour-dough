@@ -89,7 +89,7 @@ services:
         mkdir -p /etc/grafana/provisioning/datasources
         mkdir -p /etc/grafana/provisioning/dashboards
         mkdir -p /etc/grafana/provisioning/alerting
-        mkdir -p /var/lib/grafana/dashboards
+        mkdir -p /tmp/grafana/dashboards
 
         cat >/etc/grafana/provisioning/datasources/influxdb.yml <<'EOF'
         apiVersion: 1
@@ -116,7 +116,7 @@ services:
           - name: Default
             type: file
             options:
-              path: /var/lib/grafana/dashboards
+              path: /tmp/grafana/dashboards
         EOF
 
         cat >/etc/grafana/provisioning/alerting/alert_rules.yml <<'EOF'
@@ -214,7 +214,7 @@ services:
             group_by: ["grafana_folder", "alertname"]
         EOF
 
-        cat >/var/lib/grafana/dashboards/main.json <<'EOF'
+        cat >/tmp/grafana/dashboards/main.json <<'EOF'
         {
           "annotations": {
             "list": [
