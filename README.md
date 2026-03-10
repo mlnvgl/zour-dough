@@ -1,27 +1,42 @@
-# zour-dough
+# Serial Logger
 
-This is a project about sour dough.
+A serial monitor and auto-flasher for Raspberry Pi Pico development. It watches your compiled `.uf2` firmware for changes, automatically flashes it to the Pico, and streams serial output — creating a seamless develop-build-flash-monitor loop.
 
-The purpose of this project is to build a system that keeps sour dough at a temperature of 28 degree celsius to build the perfect environment for the grow of the lactic acid bacteria.
+## How It Works
 
-# The Software
+1. Reboots the Pico into bootloader mode over serial
+2. Copies the `.uf2` firmware onto the Pico's USB mass-storage drive
+3. Opens a serial connection and prints all output from the microcontroller
+4. Watches the `.uf2` file for changes — when it detects a rebuild, it re-flashes and reconnects automatically
 
-This is a mono repository containing currently two solutions
+## Configuration
 
-- micro-python for the implementation in python
-- micro-zig for the implementation with zig
+Edit the constants at the top of `main()` in `main.py` to match your setup:
 
-They both shall fulfill the exact same use case.
-The main reason to have two different solutions are:
+| Variable       | Default                         | Description                              |
+| -------------- | ------------------------------- | ---------------------------------------- |
+| `uf2_path`     | `./zig-out/firmware.uf2`       | Path to the compiled firmware file       |
+| `serial_port`  | `/dev/ttyACM0`                  | Serial port the Pico is connected to     |
+| `boot_drive`   | `/media/you/RPI-RP2`           | Mount point of the Pico in bootloader mode |
 
-- difficulties to implement everything in Zig, because of low-level code challenges
-- experience in python and availability of reference projects and support for many drivers for different sensors.
+## Requirements
 
-# The Hardware
+- Python 3
+- [pyserial](https://pypi.org/project/pyserial/)
 
-Following sensors and hardware is used
+```sh
+pip install pyserial
+```
 
-- Temperature Sensor DS18B20
-- Temperature Sensor DHT22
-- Raspberry Pico RP2040
-- Raspberry Pico RP2035
+## Usage
+
+```sh
+python main.py
+```
+
+The script will flash the firmware, then print serial output. Rebuild your firmware in another terminal and the script will detect the change, re-flash, and resume logging. Press `Ctrl+C` to quit.
+
+## Notes
+
+- The Pico firmware must handle the `__REBOOT_BOOTLOADER__` serial command to enter bootloader mode.
+- On macOS, the serial port is typically `/dev/cu.usbmodemXXXX` and the boot drive is `/Volumes/RPI-RP2`.
