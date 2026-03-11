@@ -1,14 +1,14 @@
 const std = @import("std");
 const microzig = @import("microzig");
-
 const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
-const gpio = rp2xxx.gpio;
 const usb = microzig.core.usb;
 const USB_Device = rp2xxx.usb.Polled(.{});
 const USB_Serial = usb.drivers.CDC;
 
-const DS18B20 = microzig.drivers.sensor.DS18B20;
+const pin_config = rp2xxx.pins.GlobalConfiguration{
+    .GPIO25 = .{ .name = "led", .direction = .out },
+};
 
 var usb_device: USB_Device = undefined;
 
@@ -30,179 +30,51 @@ var usb_controller: usb.DeviceController(.{
     .reset = "",
 }}) = .init;
 
-pub fn panic(message: []const u8, _: ?*std.builtin.StackTrace, _: ?usize) noreturn {
-    std.log.err("panic: {s}", .{message});
-    @breakpoint();
-    while (true) {}
+var usb_tx_buf: [256]u8 = undefined;
+var usb_rx_buf: [256]u8 = undefined;
+
+fn cdc_write(serial: *USB_Serial, comptime fmt: []const u8, args: anytype) void {
+    var tx = std.fmt.bufPrint(&usb_tx_buf, fmt, args) catch return;
+    const deadline = time.get_time_since_boot().to_us() + 10_000;
+    while (tx.len > 0) {
+        tx = tx[serial.write(tx)..];
+        usb_device.poll(&usb_controller);
+        if (time.get_time_since_boot().to_us() >= deadline) return;
+    }
+    while (!serial.flush()) {
+        usb_device.poll(&usb_controller);
+        if (time.get_time_since_boot().to_us() >= deadline) break;
+    }
 }
 
-pub const microzig_options = microzig.Options{
-    .log_level = .debug,
-    .log_scope_levels = &.{
-        .{ .scope = .usb_dev, .level = .warn },
-        .{ .scope = .usb_ctrl, .level = .warn },
-        .{ .scope = .usb_cdc, .level = .warn },
-    },
-    .logFn = rp2xxx.uart.log,
-};
-
-const pin_config: rp2xxx.pins.GlobalConfiguration = .{
-    .GPIO0 = .{ .function = .UART0_TX },
-    .GPIO25 = .{ .name = "led", .direction = .out },
-    .GPIO22 = .{
-        .name = "ds18b20",
-        .direction = .in,
-        .pull = .up,
-    },
-    .GPIO21 = .{
-        .name = "heater",
-        .direction = .out,
-    },
-};
-
-pub fn blink(led: anytype, times: u32, on_ms: u32, off_ms: u32) void {
-    var i: u32 = 0;
-    while (i < times) : (i += 1) {
-        led.put(1);
-        time.sleep_ms(on_ms);
-        led.put(0);
-        time.sleep_ms(off_ms);
+fn cdc_read(serial: *USB_Serial) []const u8 {
+    var len: usize = 0;
+    while (true) {
+        const n = serial.read(usb_rx_buf[len..]);
+        len += n;
+        if (n == 0) break;
     }
+    return usb_rx_buf[0..len];
 }
 
 pub fn main() !void {
     const pins = pin_config.apply();
-
-    const max_temp = 25; // Celsius - turn heater off
-    const min_temp = 23; // Celsius - turn heater on
-    const check_interval_seconds = 3; // Seconds between temperature checks
-    const conversion_time_ms = 750; // Time it takes for DS18B20 to perform a temperature conversion
-
-    const uart = rp2xxx.uart.instance.num(0);
-    uart.apply(.{
-        .clock_config = rp2xxx.clock_config,
-    });
-    rp2xxx.uart.init_logger(uart);
-
-    // status for pins
-    pins.heater.put(0);
-    pins.led.put(1);
-    // quick 3x fast blink to indicate startup/activity
-    blink(pins.led, 3, 40, 40);
-
-    // Then initialize the USB device using the configuration defined above
     usb_device = .init();
 
-    var old: u64 = time.get_time_since_boot().to_us();
-    var new: u64 = 0;
+    var last_toggle: u64 = 0;
+    var blink_count: u32 = 0;
 
-    var ds18b20_gpio = rp2xxx.drivers.GPIO_Device.init(pins.ds18b20);
-    const clock_device = rp2xxx.drivers.clock_device();
-
-    var ds18b20: ?DS18B20 = null;
-    var ds18b20_init_err: ?anyerror = null;
-    var ds18b20_conversion_err: ?anyerror = null;
-
-    ds18b20 = DS18B20.init(ds18b20_gpio.digital_io(), clock_device) catch |err| blk: {
-        ds18b20_init_err = err;
-        break :blk null;
-    };
-
-    var i: u32 = 0;
     while (true) {
-        // You can now poll for USB events
         usb_device.poll(&usb_controller);
 
-        if (usb_controller.drivers()) |drivers| {
-            if (ds18b20_init_err) |err| {
-                usb_cdc_write(&drivers.serial, "ds18b20 init failed: {any}\r\n", .{err});
-                pins.led.put(0);
-                ds18b20_init_err = null;
-            }
-            new = time.get_time_since_boot().to_us();
-            if (new - old > 500000) {
-                old = new;
-                pins.led.toggle();
-                i += 1;
-                std.log.info("cdc test: {}", .{i});
-
-                if (ds18b20) |*sensor| {
-                    sensor.initiate_temperature_conversion(.{}) catch |err| {
-                        ds18b20_conversion_err = err;
-                    };
-                }
-
-                if (ds18b20_conversion_err) |err| {
-                    usb_cdc_write(&drivers.serial, "ds18b20 conversion failed: {any}\r\n", .{err});
-                    ds18b20_conversion_err = null;
-                }
-
-                // wait for conversion to complete
-                time.sleep_ms(conversion_time_ms);
-
-                if (ds18b20) |*sensor| {
-                    const temp = sensor.read_temperature(.{}) catch |err| {
-                        usb_cdc_write(&drivers.serial, "could not read ds18b20 temperature: {any}\r\n", .{err});
-                        pins.led.put(0);
-                        return;
-                    };
-
-                    if (temp >= max_temp) {
-                        pins.led.put(1);
-                        blink(pins.led, 5, 40, 40);
-                        pins.heater.put(0);
-                    } else if (temp <= min_temp) {
-                        pins.heater.put(1);
-                        blink(pins.led, 10, 400, 400);
-                    } else {
-                        // perfect temperature between min and max, do not heat
-                        pins.heater.put(0);
-                    }
-
-                    usb_cdc_write(&drivers.serial, "ds18b20 temperature: {d} C\r\n", .{temp});
-                }
-            }
-
-            // read and print host command if present
-            const message = usb_cdc_read(&drivers.serial);
-            if (message.len > 0) {
-                usb_cdc_write(&drivers.serial, "Your message to me was: {s}\r\n", .{message});
+        const now = time.get_time_since_boot().to_us();
+        if (now - last_toggle >= 250_000) {
+            last_toggle = now;
+            blink_count += 1;
+            pins.led.toggle();
+            if (usb_controller.drivers()) |drivers| {
+                cdc_write(&drivers.serial, "blink {}\r\n", .{blink_count});
             }
         }
-        time.sleep_ms(check_interval_seconds * 1000);
     }
-}
-
-var usb_tx_buff: [1024]u8 = undefined;
-
-// Transfer data to host
-// NOTE: After each USB chunk transfer, we have to call the USB task so that bus TX events can be handled
-pub fn usb_cdc_write(serial: *USB_Serial, comptime fmt: []const u8, args: anytype) void {
-    var tx = std.fmt.bufPrint(&usb_tx_buff, fmt, args) catch &.{};
-
-    while (tx.len > 0) {
-        tx = tx[serial.write(tx)..];
-        usb_device.poll(&usb_controller);
-    }
-    // Short messages are not sent right away; instead, they accumulate in a buffer, so we have to force a flush to send them
-    while (!serial.flush())
-        usb_device.poll(&usb_controller);
-}
-
-var usb_rx_buff: [1024]u8 = undefined;
-
-// Receive data from host
-// NOTE: Read code was not tested extensively. In case of issues, try to call USB task before every read operation
-pub fn usb_cdc_read(
-    serial: *USB_Serial,
-) []const u8 {
-    var rx_len: usize = 0;
-
-    while (true) {
-        const len = serial.read(usb_rx_buff[rx_len..]);
-        rx_len += len;
-        if (len == 0) break;
-    }
-
-    return usb_rx_buff[0..rx_len];
 }
