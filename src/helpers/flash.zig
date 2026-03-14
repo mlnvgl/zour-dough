@@ -10,12 +10,10 @@ pub fn main() !void {
     try reboot.spawn();
     _ = try reboot.wait();
 
-    std.Thread.sleep(1 * std.time.ns_per_s);
+    std.Thread.sleep(3 * std.time.ns_per_s);
 
     std.debug.print("Flashing {s}...\n", .{UF2_PATH});
     var flash = std.process.Child.init(&.{ "picotool", "load", "-f", "-x", UF2_PATH }, allocator);
-    flash.stdout_behavior = .Pipe;
-    flash.stderr_behavior = .Pipe;
     try flash.spawn();
     const term = try flash.wait();
 
