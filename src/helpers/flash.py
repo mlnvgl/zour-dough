@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 
 SERIAL_PORT = "/dev/tty.usbmodemsomeserial1"
-UF2_PATH = Path("./zig-out/firmware/blinky.uf2")
+UF2_PATH = Path("./../../zig-out/firmware/blinky.uf2")
 
 def main():
     print("Rebooting to bootloader...")
