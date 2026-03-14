@@ -1,3 +1,11 @@
+// flash: reboots the Pico into BOOTSEL mode and flashes the UF2 firmware via picotool.
+//
+// Usage: run from repo root: ./zig-out/bin/flashy
+//
+// Requires picotool to be installed (brew install picotool).
+// The 3s sleep after reboot gives the Pico time to re-enumerate as a BOOTSEL device
+// before picotool tries to connect.
+
 const std = @import("std");
 
 const UF2_PATH = "zig-out/firmware/blinky.uf2";
