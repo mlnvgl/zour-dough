@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
     const flashy = b.addExecutable(.{
         .name = "flashy",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/helpers/flash.zig"),
+            .root_source_file = b.path("tools/flash.zig"),
             .target = target,
             .optimize = optimize,
         }),
@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
     const serial_logger = b.addExecutable(.{
         .name = "serial-logger",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/helpers/serial-logger.zig"),
+            .root_source_file = b.path("tools/serial-logger.zig"),
             .target = target,
             .optimize = optimize,
         }),
