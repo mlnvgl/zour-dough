@@ -16,6 +16,16 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
     });
 
+    const flashy = b.addExecutable(.{
+        .name = "flashy",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/helpers/flash.zig"),
+            .target = b.standardTargetOptions(.{}),
+            .optimize = b.standardOptimizeOption(.{}),
+        }),
+    });
+    b.installArtifact(flashy);
+
     // We call this twice to demonstrate that the default binary output for
     // RP2040 is UF2, but we can also output other formats easily
     mb.install_firmware(firmware, .{});
