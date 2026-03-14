@@ -7,22 +7,28 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO25 = .{ .name = "led", .direction = .out },
 };
 
-pub fn main() !void {
-    const pins = pin_config.apply();
+const Pins = @TypeOf(pin_config.apply());
+var pins: Pins = undefined;
+var last_toggle: u64 = 0;
+var blink_count: u32 = 0;
+
+fn init() void {
+    pins = pin_config.apply();
     usb_cdc.init();
+}
 
-    var last_toggle: u64 = 0;
-    var blink_count: u32 = 0;
-
-    while (true) {
-        usb_cdc.poll();
-
-        const now = time.get_time_since_boot().to_us();
-        if (now - last_toggle >= 250_000) {
-            last_toggle = now;
-            blink_count += 1;
-            pins.led.toggle();
-            usb_cdc.write("test blink blink blink {}\r\n", .{blink_count});
-        }
+fn tick() void {
+    usb_cdc.poll();
+    const now = time.get_time_since_boot().to_us();
+    if (now - last_toggle >= 250_000) {
+        last_toggle = now;
+        blink_count += 1;
+        pins.led.toggle();
+        usb_cdc.write("blink {}\r\n", .{blink_count});
     }
+}
+
+pub fn main() !void {
+    init();
+    while (true) tick();
 }
