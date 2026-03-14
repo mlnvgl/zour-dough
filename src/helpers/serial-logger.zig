@@ -1,3 +1,18 @@
+// serial-logger: reads logs from the Pico over USB-CDC serial and prints them to stdout.
+// Also watches the UF2 firmware file for changes and auto-reflashes via flashy.
+//
+// Usage: run from repo root: ./zig-out/bin/serial-logger
+//
+// Serial port notes:
+//   - O_NONBLOCK is required on both the existence check and the open() call.
+//     On macOS, opening a serial port without O_NONBLOCK blocks indefinitely
+//     waiting for a carrier detect (DCD) signal. USB-CDC devices like the Pico
+//     never assert DCD, so the call hangs forever without this flag.
+//   - waitForSerial() uses posix.access() (not open()) to check existence,
+//     since access() never blocks regardless of DCD state.
+//   - VMIN=0 + VTIME=1 in termios makes reads return after 0.1s if no data
+//     arrives, allowing the main loop to also poll for UF2 changes.
+
 const std = @import("std");
 
 const SERIAL_PORT = "/dev/tty.usbmodemsomeserial1";
@@ -5,9 +20,8 @@ const UF2_PATH = "zig-out/firmware/blinky.uf2";
 
 fn waitForSerial() void {
     while (true) {
-        std.posix.access(SERIAL_PORT, std.posix.F_OK) catch |err| {
-            std.debug.print("access failed: {s}\n", .{@errorName(err)});
-            std.Thread.sleep(1 * std.time.ns_per_s);
+        std.posix.access(SERIAL_PORT, std.posix.F_OK) catch {
+            std.Thread.sleep(100 * std.time.ns_per_ms);
             continue;
         };
         break;

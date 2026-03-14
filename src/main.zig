@@ -73,7 +73,7 @@ pub fn main() !void {
             blink_count += 1;
             pins.led.toggle();
             if (usb_controller.drivers()) |drivers| {
-                cdc_write(&drivers.serial, "blink blink blink {}\r\n", .{blink_count});
+                cdc_write(&drivers.serial, "test blink blink blink {}\r\n", .{blink_count});
             }
         }
     }
