@@ -7,6 +7,9 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO25 = .{ .name = "led", .direction = .out },
 };
 
+// Change this to select the blink phase
+const BLINK_INTERVAL_US: u64 = 800_000; // fast: 100ms, slow: 500_000
+
 const Pins = @TypeOf(pin_config.apply());
 var pins: Pins = undefined;
 var last_toggle: u64 = 0;
@@ -20,7 +23,7 @@ fn init() void {
 fn tick() void {
     usb_cdc.poll();
     const now = time.get_time_since_boot().to_us();
-    if (now - last_toggle >= 250_000) {
+    if (now - last_toggle >= BLINK_INTERVAL_US) {
         last_toggle = now;
         blink_count += 1;
         pins.led.toggle();

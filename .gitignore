@@ -1,3 +1,5 @@
+# doc
+doc/
 # Zig build outputs and caches
 .zig-cache/
 zig-cache/
