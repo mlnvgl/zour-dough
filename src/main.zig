@@ -2,9 +2,11 @@ const microzig = @import("microzig");
 const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
 const usb_cdc = @import("./helpers/usb_cdc.zig");
+const DS18B20 = microzig.drivers.sensor.DS18B20;
 
 const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO25 = .{ .name = "led", .direction = .out },
+    .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
 };
 
 // Change this to select the blink phase
@@ -15,23 +17,36 @@ var pins: Pins = undefined;
 var last_toggle: u64 = 0;
 var blink_count: u32 = 0;
 
-fn init() void {
+pub fn main() !void {
     pins = pin_config.apply();
     usb_cdc.init();
-}
 
-fn tick() void {
-    usb_cdc.poll();
-    const now = time.get_time_since_boot().to_us();
-    if (now - last_toggle >= BLINK_INTERVAL_US) {
-        last_toggle = now;
-        blink_count += 1;
-        pins.led.toggle();
-        usb_cdc.write("blink {}\r\n", .{blink_count});
+    var temp_gpio = rp2xxx.drivers.GPIO_Device.init(pins.temp);
+    const ds18b20 = try DS18B20.init(temp_gpio.digital_io(), rp2xxx.drivers.clock_device());
+
+    ds18b20.write_config(.{ .resolution = .sixteenth_degree_12 }) catch |err| {
+        usb_cdc.write("ds18b20 init failed: {s}\r\n", .{@errorName(err)});
+    };
+
+    while (true) {
+        usb_cdc.poll();
+        const now = time.get_time_since_boot().to_us();
+        if (now - last_toggle >= BLINK_INTERVAL_US) {
+            last_toggle = now;
+            blink_count += 1;
+            pins.led.toggle();
+            usb_cdc.write("blink {}\r\n", .{blink_count});
+
+            ds18b20.initiate_temperature_conversion(.{}) catch |err| {
+                usb_cdc.write("conversion failed: {s}\r\n", .{@errorName(err)});
+                continue;
+            };
+            time.sleep_ms(750);
+            const temp = ds18b20.read_temperature(.{}) catch |err| {
+                usb_cdc.write("read failed: {s}\r\n", .{@errorName(err)});
+                continue;
+            };
+            usb_cdc.write("temp: {}\r\n", .{temp});
+        }
     }
-}
-
-pub fn main() !void {
-    init();
-    while (true) tick();
 }
