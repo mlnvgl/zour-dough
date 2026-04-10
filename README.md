@@ -5,6 +5,8 @@
 
 ## Hardware
 
+- IRLZ44N N-Kanal MOSFET Transistor 55V 47A 3 Polig TO-220AB IRLZ44NPBF Transistoren
+
 ## Development
 
 1. Zig build
