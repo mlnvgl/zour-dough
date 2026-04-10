@@ -1,0 +1,109 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:1d3f5d22-bf4f-4f9c-bc76-7bbdb2e7b9b8",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-04-10T00:00:00Z",
+    "component": {
+      "type": "firmware",
+      "name": "zour-dough",
+      "version": "0.0.0",
+      "description": "RP2040 firmware and host tools for the Zour-Dough sourdough temperature-control project.",
+      "licenses": [
+        {
+          "license": {
+            "id": "NOASSERTION"
+          }
+        }
+      ]
+    },
+    "tools": [
+      {
+        "vendor": "GitHub Copilot",
+        "name": "GPT-5.4",
+        "version": "2026-04-10"
+      }
+    ]
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:generic/zour-dough@0.0.0",
+      "type": "firmware",
+      "name": "zour-dough",
+      "version": "0.0.0",
+      "scope": "required"
+    },
+    {
+      "bom-ref": "pkg:generic/microzig@1ce2b381a14dad405b2de7e43c5a0ff8d371adea",
+      "type": "library",
+      "name": "microzig",
+      "version": "1ce2b381a14dad405b2de7e43c5a0ff8d371adea",
+      "purl": "pkg:generic/microzig@1ce2b381a14dad405b2de7e43c5a0ff8d371adea",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/ZigEmbeddedGroup/microzig.git"
+        }
+      ],
+      "scope": "required",
+      "properties": [
+        {
+          "name": "zig.hash",
+          "value": "microzig-0.15.0-D20YSS2V3QBZpYyKr6sDFSqknwN1TiPh3jaMLMazrpCV"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:generic/zig@0.15.1",
+      "type": "application",
+      "name": "zig",
+      "version": "0.15.1",
+      "purl": "pkg:generic/zig@0.15.1",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "role",
+          "value": "minimum_zig_version"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:generic/picotool@unknown",
+      "type": "application",
+      "name": "picotool",
+      "version": "unknown",
+      "purl": "pkg:generic/picotool@unknown",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "role",
+          "value": "host flashing tool"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/zour-dough@0.0.0",
+      "dependsOn": [
+        "pkg:generic/microzig@1ce2b381a14dad405b2de7e43c5a0ff8d371adea",
+        "pkg:generic/zig@0.15.1",
+        "pkg:generic/picotool@unknown"
+      ]
+    },
+    {
+      "ref": "pkg:generic/microzig@1ce2b381a14dad405b2de7e43c5a0ff8d371adea",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:generic/zig@0.15.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:generic/picotool@unknown",
+      "dependsOn": []
+    }
+  ]
+}
