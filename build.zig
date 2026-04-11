@@ -29,6 +29,10 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(flashy);
 
+    const run_flashy_step = b.step("run-flashy", "runs flash script");
+    const run_flashy_cmd = b.addRunArtifact(flashy);
+    run_flashy_step.dependOn(&run_flashy_cmd.step);
+
     const serial_logger = b.addExecutable(.{
         .name = "serial-logger",
         .root_module = b.createModule(.{
@@ -38,6 +42,10 @@ pub fn build(b: *std.Build) void {
         }),
     });
     b.installArtifact(serial_logger);
+
+    const run_seriallogger_step = b.step("run-serial-logger", "runs serial logger script");
+    const run_seriallogger_cmd = b.addRunArtifact(serial_logger);
+    run_seriallogger_step.dependOn(&run_seriallogger_cmd.step);
 
     // We call this twice to demonstrate that the default binary output for
     // RP2040 is UF2, but we can also output other formats easily
