@@ -8,6 +8,7 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO25 = .{ .name = "led", .direction = .out },
     .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
     .GPIO21 = .{ .name = "heater", .direction = .out, .pull = .down },
+    .GPIO20 = .{ .name = "ultra_sound", .direction = .out, .pull = .down },
 };
 
 // Change this to select the blink phase
@@ -20,6 +21,29 @@ var blink_count: u32 = 0;
 
 const TEMP_THRESHOLD_MIN: f32 = 25.0;
 const TEMP_THRESHOLD_MAX: f32 = 28.0;
+
+const MAGIC_ULTRA_SOUND_VALUE: f32 = 29.0;
+
+pub fn measure_ulta_sound(a: u32, b: u32) f32 {
+    // Placeholder implementation
+
+    return (b - a) / MAGIC_ULTRA_SOUND_VALUE;
+}
+
+pub fn trigger_ultra_sound() !void {
+    var ultra_sound_gpio = rp2xxx.drivers.GPIO_Device.init(pins.ultra_sound);
+    ultra_sound_gpio.write(.high) catch |err| {
+        usb_cdc.write("ultra sound trigger failed: {s}\r\n", .{@errorName(err)});
+        return;
+    };
+    usb_cdc.write("ultra sound triggered\r\n", .{});
+    time.sleep_ms(10);
+    ultra_sound_gpio.write(.low) catch |err| {
+        usb_cdc.write("ultra sound trigger failed: {s}\r\n", .{@errorName(err)});
+        return;
+    };
+    usb_cdc.write("ultra sound reset\r\n", .{});
+}
 
 pub fn main() !void {
     pins = pin_config.apply();
@@ -74,7 +98,12 @@ pub fn main() !void {
 
             usb_cdc.write("heater: {}\r\n", .{heater_on});
 
-            time.sleep_ms(3000);
+            time.sleep_ms(100);
+
+            trigger_ultra_sound() catch |err| {
+                usb_cdc.write("ultra sound trigger failed: {s}\r\n", .{@errorName(err)});
+                continue;
+            };
         }
     }
 }
