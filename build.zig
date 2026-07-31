@@ -47,6 +47,17 @@ pub fn build(b: *std.Build) void {
     const run_seriallogger_cmd = b.addRunArtifact(serial_logger);
     run_seriallogger_step.dependOn(&run_seriallogger_cmd.step);
 
+    const power_switch_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/power_switch.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    const run_power_switch_tests = b.addRunArtifact(power_switch_tests);
+    const test_step = b.step("test", "run unit tests");
+    test_step.dependOn(&run_power_switch_tests.step);
+
     // We call this twice to demonstrate that the default binary output for
     // RP2040 is UF2, but we can also output other formats easily
     mb.install_firmware(firmware, .{});

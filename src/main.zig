@@ -3,6 +3,7 @@ const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
 const usb_cdc = @import("./helpers/usb_cdc.zig");
 const DS18B20 = microzig.drivers.sensor.DS18B20;
+const PowerSwitch = @import("./power_switch.zig").PowerSwitch;
 
 const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO25 = .{ .name = "led", .direction = .out },
@@ -10,6 +11,9 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO21 = .{ .name = "heater", .direction = .out, .pull = .down },
     .GPIO20 = .{ .name = "ultra_sound_trigger", .direction = .out, .pull = .down },
     .GPIO19 = .{ .name = "ultra_sound_echo", .direction = .in, .pull = .down },
+    // Baker's physical on/off toggle switch. Wired to ground, so pull-up
+    // reads .low on the pin when the switch is on.
+    .GPIO18 = .{ .name = "power_switch", .direction = .in, .pull = .up },
 };
 
 // Change this to select the blink phase
@@ -97,9 +101,16 @@ pub fn main() !void {
         usb_cdc.write("heater init failed: {s}\r\n", .{@errorName(err)});
     };
 
+    var power_switch_gpio = rp2xxx.drivers.GPIO_Device.init(pins.power_switch);
+    var power_switch = PowerSwitch{};
+
     while (true) {
         usb_cdc.poll();
         const now = time.get_time_since_boot().to_us();
+
+        const switch_is_on = (power_switch_gpio.read() catch .high) == .low;
+        if (switch_is_on) power_switch.switchOn() else power_switch.switchOff();
+
         if (now - last_toggle >= BLINK_INTERVAL_US) {
             last_toggle = now;
             blink_count += 1;
@@ -117,7 +128,13 @@ pub fn main() !void {
             };
             usb_cdc.write("temp: {}\r\n", .{temp});
 
-            if (temp <= TEMP_THRESHOLD_MIN) {
+            if (power_switch.state == .off) {
+                heater_on = false;
+                heater_gpio.write(.low) catch |err| {
+                    usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
+                    continue;
+                };
+            } else if (temp <= TEMP_THRESHOLD_MIN) {
                 heater_on = true;
                 heater_gpio.write(.high) catch |err| {
                     usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
@@ -131,6 +148,7 @@ pub fn main() !void {
                 };
             }
 
+            usb_cdc.write("power: {s}\r\n", .{@tagName(power_switch.state)});
             usb_cdc.write("heater: {}\r\n", .{heater_on});
 
             time.sleep_ms(100);
