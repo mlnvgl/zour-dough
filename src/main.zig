@@ -1,12 +1,16 @@
 const microzig = @import("microzig");
 const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
+const cyw43 = rp2xxx.cyw43;
 const usb_cdc = @import("./helpers/usb_cdc.zig");
 const DS18B20 = microzig.drivers.sensor.DS18B20;
 const PowerSwitch = @import("./power_switch.zig").PowerSwitch;
 
+// This board is a Pico WH: GPIO25 is the wireless chip's SPI chip-select
+// line, not an LED (unlike a plain Pico). The onboard LED lives behind the
+// CYW43439 wireless chip and is driven via `cyw43.gpio.put(.led, ...)`
+// instead of a regular GPIO pin.
 const pin_config = rp2xxx.pins.GlobalConfiguration{
-    .GPIO25 = .{ .name = "led", .direction = .out },
     .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
     .GPIO21 = .{ .name = "heater", .direction = .out, .pull = .down },
     .GPIO20 = .{ .name = "ultra_sound_trigger", .direction = .out, .pull = .down },
@@ -19,10 +23,17 @@ const pin_config = rp2xxx.pins.GlobalConfiguration{
 // Change this to select the blink phase
 const BLINK_INTERVAL_US: u64 = 800_000; // fast: 100ms, slow: 500_000
 
+// Visual "flash succeeded" confirmation: blink fast a few times before
+// settling into the slower heartbeat above. Blocking sleep_ms is fine here
+// since it runs before usb_cdc.init(), so there's no USB poll to starve yet.
+const BOOT_BLINK_COUNT: u8 = 5;
+const BOOT_BLINK_INTERVAL_MS: u32 = 100;
+
 const Pins = @TypeOf(pin_config.apply());
 var pins: Pins = undefined;
 var last_toggle: u64 = 0;
 var blink_count: u32 = 0;
+var led_on: bool = false;
 
 const TEMP_THRESHOLD_MIN: f32 = 25.0;
 const TEMP_THRESHOLD_MAX: f32 = 28.0;
@@ -84,8 +95,22 @@ pub fn measure_ultra_sound() UltraSoundError!f32 {
     return @as(f32, @floatFromInt(echo_duration_us)) * SOUND_SPEED_CM_PER_US / 2.0;
 }
 
+fn boot_blink() void {
+    var i: u8 = 0;
+    while (i < BOOT_BLINK_COUNT) : (i += 1) {
+        led_on = true;
+        cyw43.gpio.put(.led, led_on);
+        time.sleep_ms(BOOT_BLINK_INTERVAL_MS);
+        led_on = false;
+        cyw43.gpio.put(.led, led_on);
+        time.sleep_ms(BOOT_BLINK_INTERVAL_MS);
+    }
+}
+
 pub fn main() !void {
     pins = pin_config.apply();
+    try cyw43.init();
+    boot_blink();
     usb_cdc.init();
 
     var temp_gpio = rp2xxx.drivers.GPIO_Device.init(pins.temp);
@@ -114,7 +139,8 @@ pub fn main() !void {
         if (now - last_toggle >= BLINK_INTERVAL_US) {
             last_toggle = now;
             blink_count += 1;
-            pins.led.toggle();
+            led_on = !led_on;
+            cyw43.gpio.put(.led, led_on);
             //usb_cdc.write("blink {}\r\n", .{blink_count});
 
             ds18b20.initiate_temperature_conversion(.{}) catch |err| {
