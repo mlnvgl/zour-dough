@@ -7,6 +7,7 @@ const PowerSwitch = @import("./power_switch.zig").PowerSwitch;
 const status_led = @import("./status_led.zig");
 const Ticker = @import("./ticker.zig").Ticker;
 const heater = @import("./heater.zig");
+const heater_control = @import("./heater_control.zig");
 
 const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
@@ -25,9 +26,6 @@ const MAIN_LOOP_INTERVAL_US: u64 = 800_000;
 const Pins = @TypeOf(pin_config.apply());
 var pins: Pins = undefined;
 var ticker: Ticker = .{ .interval_us = MAIN_LOOP_INTERVAL_US };
-
-const TEMP_THRESHOLD_MIN: f32 = 25.0;
-const TEMP_THRESHOLD_MAX: f32 = 28.0;
 
 const ULTRA_SOUND_TRIGGER_US: u64 = 10;
 const ULTRA_SOUND_SETTLE_US: u64 = 2;
@@ -100,7 +98,7 @@ pub fn main() !void {
     };
 
     heater.init(pins.heater);
-    var heater_state: heater.HeaterState = .off;
+    var heater_state: heater_control.HeaterState = .off;
     heater.set(heater_state) catch |err| {
         usb_cdc.write("heater init failed: {s}\r\n", .{@errorName(err)});
     };
@@ -129,25 +127,11 @@ pub fn main() !void {
             };
             usb_cdc.write("temp: {}\r\n", .{temp});
 
-            if (power_switch.state == .off) {
-                heater_state = .off;
-                heater.set(heater_state) catch |err| {
-                    usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
-                    continue;
-                };
-            } else if (temp <= TEMP_THRESHOLD_MIN) {
-                heater_state = .on;
-                heater.set(heater_state) catch |err| {
-                    usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
-                    continue;
-                };
-            } else if (temp >= TEMP_THRESHOLD_MAX) {
-                heater_state = .off;
-                heater.set(heater_state) catch |err| {
-                    usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
-                    continue;
-                };
-            }
+            heater_state = heater_control.decide(temp, power_switch.state, heater_state);
+            heater.set(heater_state) catch |err| {
+                usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
+                continue;
+            };
 
             usb_cdc.write("power: {s}\r\n", .{@tagName(power_switch.state)});
             usb_cdc.write("heater: {s}\r\n", .{@tagName(heater_state)});

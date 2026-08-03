@@ -1,6 +1,5 @@
 const rp2xxx = @import("microzig").hal;
-
-pub const HeaterState = enum { on, off };
+pub const HeaterState = @import("./heater_control.zig").HeaterState;
 
 var gpio: rp2xxx.drivers.GPIO_Device = undefined;
 
