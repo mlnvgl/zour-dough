@@ -2,12 +2,12 @@ const microzig = @import("microzig");
 const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
 const usb_cdc = @import("./helpers/usb_cdc.zig");
-const DS18B20 = microzig.drivers.sensor.DS18B20;
 const PowerSwitch = @import("./power_switch.zig").PowerSwitch;
 const status_led = @import("./status_led.zig");
 const Ticker = @import("./ticker.zig").Ticker;
 const heater = @import("./heater.zig");
 const heater_control = @import("./heater_control.zig");
+const temp_sensor = @import("./temp_sensor.zig");
 
 const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
@@ -90,10 +90,8 @@ pub fn main() !void {
     status_led.bootBlink();
     usb_cdc.init();
 
-    var temp_gpio = rp2xxx.drivers.GPIO_Device.init(pins.temp);
-    const ds18b20 = try DS18B20.init(temp_gpio.digital_io(), rp2xxx.drivers.clock_device());
-
-    ds18b20.write_config(.{ .resolution = .sixteenth_degree_12 }) catch |err| {
+    try temp_sensor.init(pins.temp);
+    temp_sensor.configure() catch |err| {
         usb_cdc.write("ds18b20 init failed: {s}\r\n", .{@errorName(err)});
     };
 
@@ -116,13 +114,8 @@ pub fn main() !void {
         if (ticker.ready(now)) {
             status_led.toggle();
 
-            ds18b20.initiate_temperature_conversion(.{}) catch |err| {
-                usb_cdc.write("conversion failed: {s}\r\n", .{@errorName(err)});
-                continue;
-            };
-            time.sleep_ms(750);
-            const temp = ds18b20.read_temperature(.{}) catch |err| {
-                usb_cdc.write("read failed: {s}\r\n", .{@errorName(err)});
+            const temp = temp_sensor.read() catch |err| {
+                usb_cdc.write("temp read failed: {s}\r\n", .{@errorName(err)});
                 continue;
             };
             usb_cdc.write("temp: {}\r\n", .{temp});
