@@ -9,27 +9,16 @@ const heater = @import("./heater.zig");
 const heater_control = @import("./heater_control.zig");
 const temp_sensor = @import("./temp_sensor.zig");
 const ultra_sound = @import("./ultra_sound.zig");
-
-const pin_config = rp2xxx.pins.GlobalConfiguration{
-    .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
-    .GPIO21 = .{ .name = "heater", .direction = .out, .pull = .down },
-    .GPIO20 = .{ .name = "ultra_sound_trigger", .direction = .out, .pull = .down },
-    .GPIO19 = .{ .name = "ultra_sound_echo", .direction = .in, .pull = .down },
-    // Baker's physical on/off toggle switch. Wired to ground, so pull-up
-    // reads .low on the pin when the switch is on.
-    .GPIO18 = .{ .name = "power_switch", .direction = .in, .pull = .up },
-};
+const board = @import("./board.zig");
 
 // Interval for the main loop's periodic work (LED heartbeat, temp/heater
 // check, ultrasound read). fast: 100ms, slow: 500_000
 const MAIN_LOOP_INTERVAL_US: u64 = 800_000;
 
-const Pins = @TypeOf(pin_config.apply());
-var pins: Pins = undefined;
 var ticker: Ticker = .{ .interval_us = MAIN_LOOP_INTERVAL_US };
 
 pub fn main() !void {
-    pins = pin_config.apply();
+    const pins = board.apply();
     try status_led.init();
     status_led.bootBlink();
     usb_cdc.init();
