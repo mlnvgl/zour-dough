@@ -8,6 +8,7 @@ const Ticker = @import("./ticker.zig").Ticker;
 const heater = @import("./heater.zig");
 const heater_control = @import("./heater_control.zig");
 const temp_sensor = @import("./temp_sensor.zig");
+const ultra_sound = @import("./ultra_sound.zig");
 
 const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
@@ -27,63 +28,6 @@ const Pins = @TypeOf(pin_config.apply());
 var pins: Pins = undefined;
 var ticker: Ticker = .{ .interval_us = MAIN_LOOP_INTERVAL_US };
 
-const ULTRA_SOUND_TRIGGER_US: u64 = 10;
-const ULTRA_SOUND_SETTLE_US: u64 = 2;
-const ULTRA_SOUND_ECHO_TIMEOUT_US: u64 = 35_000;
-const SOUND_SPEED_CM_PER_US: f32 = 0.0343;
-
-const UltraSoundError =
-    rp2xxx.drivers.GPIO_Device.SetDirError ||
-    rp2xxx.drivers.GPIO_Device.WriteError ||
-    rp2xxx.drivers.GPIO_Device.ReadError ||
-    error{ EchoRiseTimeout, EchoFallTimeout };
-
-fn waitForEchoStart(echo_gpio: *rp2xxx.drivers.GPIO_Device) UltraSoundError!u64 {
-    const wait_started_at = time.get_time_since_boot().to_us();
-
-    while (try echo_gpio.read() == .low) {
-        usb_cdc.poll();
-        if (time.get_time_since_boot().to_us() - wait_started_at >= ULTRA_SOUND_ECHO_TIMEOUT_US) {
-            return error.EchoRiseTimeout;
-        }
-    }
-
-    return time.get_time_since_boot().to_us();
-}
-
-fn waitForEchoEnd(echo_gpio: *rp2xxx.drivers.GPIO_Device) UltraSoundError!u64 {
-    const wait_started_at = time.get_time_since_boot().to_us();
-
-    while (try echo_gpio.read() == .high) {
-        usb_cdc.poll();
-        if (time.get_time_since_boot().to_us() - wait_started_at >= ULTRA_SOUND_ECHO_TIMEOUT_US) {
-            return error.EchoFallTimeout;
-        }
-    }
-
-    return time.get_time_since_boot().to_us();
-}
-
-pub fn measure_ultra_sound() UltraSoundError!f32 {
-    var trigger_gpio = rp2xxx.drivers.GPIO_Device.init(pins.ultra_sound_trigger);
-    var echo_gpio = rp2xxx.drivers.GPIO_Device.init(pins.ultra_sound_echo);
-
-    try trigger_gpio.set_direction(.output);
-    try echo_gpio.set_direction(.input);
-    try trigger_gpio.write(.low);
-    time.sleep_us(ULTRA_SOUND_SETTLE_US);
-
-    try trigger_gpio.write(.high);
-    time.sleep_us(ULTRA_SOUND_TRIGGER_US);
-    try trigger_gpio.write(.low);
-
-    const echo_started_at = try waitForEchoStart(&echo_gpio);
-    const echo_ended_at = try waitForEchoEnd(&echo_gpio);
-    const echo_duration_us = echo_ended_at - echo_started_at;
-
-    return @as(f32, @floatFromInt(echo_duration_us)) * SOUND_SPEED_CM_PER_US / 2.0;
-}
-
 pub fn main() !void {
     pins = pin_config.apply();
     try status_led.init();
@@ -94,6 +38,8 @@ pub fn main() !void {
     temp_sensor.configure() catch |err| {
         usb_cdc.write("ds18b20 init failed: {s}\r\n", .{@errorName(err)});
     };
+
+    ultra_sound.init(pins.ultra_sound_trigger, pins.ultra_sound_echo);
 
     heater.init(pins.heater);
     var heater_state: heater_control.HeaterState = .off;
@@ -131,7 +77,7 @@ pub fn main() !void {
 
             time.sleep_ms(100);
 
-            const distance_cm = measure_ultra_sound() catch |err| {
+            const distance_cm = ultra_sound.measure() catch |err| {
                 usb_cdc.write("ultra sound read failed: {s}\r\n", .{@errorName(err)});
                 continue;
             };
