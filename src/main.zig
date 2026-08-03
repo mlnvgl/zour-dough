@@ -6,6 +6,7 @@ const DS18B20 = microzig.drivers.sensor.DS18B20;
 const PowerSwitch = @import("./power_switch.zig").PowerSwitch;
 const status_led = @import("./status_led.zig");
 const Ticker = @import("./ticker.zig").Ticker;
+const heater = @import("./heater.zig");
 
 const pin_config = rp2xxx.pins.GlobalConfiguration{
     .GPIO22 = .{ .name = "temp", .direction = .in, .pull = .up },
@@ -98,9 +99,9 @@ pub fn main() !void {
         usb_cdc.write("ds18b20 init failed: {s}\r\n", .{@errorName(err)});
     };
 
-    var heater_gpio = rp2xxx.drivers.GPIO_Device.init(pins.heater);
-    var heater_on = false;
-    heater_gpio.write(.low) catch |err| {
+    heater.init(pins.heater);
+    var heater_state: heater.HeaterState = .off;
+    heater.set(heater_state) catch |err| {
         usb_cdc.write("heater init failed: {s}\r\n", .{@errorName(err)});
     };
 
@@ -129,27 +130,27 @@ pub fn main() !void {
             usb_cdc.write("temp: {}\r\n", .{temp});
 
             if (power_switch.state == .off) {
-                heater_on = false;
-                heater_gpio.write(.low) catch |err| {
+                heater_state = .off;
+                heater.set(heater_state) catch |err| {
                     usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
                     continue;
                 };
             } else if (temp <= TEMP_THRESHOLD_MIN) {
-                heater_on = true;
-                heater_gpio.write(.high) catch |err| {
+                heater_state = .on;
+                heater.set(heater_state) catch |err| {
                     usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
                     continue;
                 };
             } else if (temp >= TEMP_THRESHOLD_MAX) {
-                heater_on = false;
-                heater_gpio.write(.low) catch |err| {
+                heater_state = .off;
+                heater.set(heater_state) catch |err| {
                     usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
                     continue;
                 };
             }
 
             usb_cdc.write("power: {s}\r\n", .{@tagName(power_switch.state)});
-            usb_cdc.write("heater: {}\r\n", .{heater_on});
+            usb_cdc.write("heater: {s}\r\n", .{@tagName(heater_state)});
 
             time.sleep_ms(100);
 
