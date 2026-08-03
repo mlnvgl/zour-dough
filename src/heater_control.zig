@@ -1,5 +1,5 @@
 const std = @import("std");
-const PowerState = @import("./power_switch.zig").PowerState;
+const PowerState = @import("./power_switch_control.zig").PowerState;
 
 pub const HeaterState = enum { on, off };
 

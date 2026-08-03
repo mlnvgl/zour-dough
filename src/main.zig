@@ -2,7 +2,7 @@ const microzig = @import("microzig");
 const rp2xxx = microzig.hal;
 const time = rp2xxx.time;
 const usb_cdc = @import("./helpers/usb_cdc.zig");
-const PowerSwitch = @import("./power_switch.zig").PowerSwitch;
+const PowerSwitch = @import("./power_switch_control.zig").PowerSwitch;
 const status_led = @import("./status_led.zig");
 const Ticker = @import("./ticker.zig").Ticker;
 const heater = @import("./heater.zig");
@@ -10,6 +10,7 @@ const heater_control = @import("./heater_control.zig");
 const temp_sensor = @import("./temp_sensor.zig");
 const ultra_sound = @import("./ultra_sound.zig");
 const board = @import("./board.zig");
+const power_switch = @import("./power_switch.zig");
 
 // Interval for the main loop's periodic work (LED heartbeat, temp/heater
 // check, ultrasound read). fast: 100ms, slow: 500_000
@@ -36,15 +37,14 @@ pub fn main() !void {
         usb_cdc.write("heater init failed: {s}\r\n", .{@errorName(err)});
     };
 
-    var power_switch_gpio = rp2xxx.drivers.GPIO_Device.init(pins.power_switch);
-    var power_switch = PowerSwitch{};
+    power_switch.init(pins.power_switch);
+    var power_switch_state = PowerSwitch{};
 
     while (true) {
         usb_cdc.poll();
         const now = time.get_time_since_boot().to_us();
 
-        const switch_is_on = (power_switch_gpio.read() catch .high) == .low;
-        if (switch_is_on) power_switch.switchOn() else power_switch.switchOff();
+        power_switch.read(&power_switch_state);
 
         if (ticker.ready(now)) {
             status_led.toggle();
@@ -55,13 +55,13 @@ pub fn main() !void {
             };
             usb_cdc.write("temp: {}\r\n", .{temp});
 
-            heater_state = heater_control.decide(temp, power_switch.state, heater_state);
+            heater_state = heater_control.decide(temp, power_switch_state.state, heater_state);
             heater.set(heater_state) catch |err| {
                 usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
                 continue;
             };
 
-            usb_cdc.write("power: {s}\r\n", .{@tagName(power_switch.state)});
+            usb_cdc.write("power: {s}\r\n", .{@tagName(power_switch_state.state)});
             usb_cdc.write("heater: {s}\r\n", .{@tagName(heater_state)});
 
             time.sleep_ms(100);

@@ -1,31 +1,14 @@
-const std = @import("std");
+const rp2xxx = @import("microzig").hal;
+const PowerSwitch = @import("./power_switch_control.zig").PowerSwitch;
 
-pub const PowerState = enum { on, off };
+var gpio: rp2xxx.drivers.GPIO_Device = undefined;
 
-/// Mirrors the Baker's physical on/off toggle switch into the system's
-/// power state. Pure and hardware-free so it can be tested without a GPIO
-/// or a board.
-pub const PowerSwitch = struct {
-    state: PowerState = .off,
-
-    pub fn switchOn(self: *PowerSwitch) void {
-        self.state = .on;
-    }
-
-    pub fn switchOff(self: *PowerSwitch) void {
-        self.state = .off;
-    }
-};
-
-test "switchOn sets the state to on" {
-    var sw = PowerSwitch{};
-    sw.switchOn();
-    try std.testing.expectEqual(PowerState.on, sw.state);
+pub fn init(pin: anytype) void {
+    gpio = rp2xxx.drivers.GPIO_Device.init(pin);
 }
 
-test "switchOff sets the state to off" {
-    var sw = PowerSwitch{};
-    sw.switchOn();
-    sw.switchOff();
-    try std.testing.expectEqual(PowerState.off, sw.state);
+// Wired to ground, so pull-up reads .low on the pin when the switch is on.
+pub fn read(power_switch: *PowerSwitch) void {
+    const switch_is_on = (gpio.read() catch .high) == .low;
+    if (switch_is_on) power_switch.switchOn() else power_switch.switchOff();
 }

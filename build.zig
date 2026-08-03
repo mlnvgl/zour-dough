@@ -49,7 +49,7 @@ pub fn build(b: *std.Build) void {
 
     const power_switch_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/power_switch.zig"),
+            .root_source_file = b.path("src/power_switch_control.zig"),
             .target = target,
             .optimize = optimize,
         }),
