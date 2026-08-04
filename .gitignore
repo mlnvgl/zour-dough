@@ -1,5 +1,3 @@
-# doc
-doc/
 # Zig build outputs and caches
 .zig-cache/
 zig-cache/
@@ -7,6 +5,8 @@ zig-out/
 .zig-out/
 build/
 build-*/
+doc/reference/
+doc/development/
 
 # Zig object/header outputs (if you emit them into repo build dirs)
 *.o

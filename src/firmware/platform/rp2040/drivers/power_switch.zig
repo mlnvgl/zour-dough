@@ -1,5 +1,5 @@
 const rp2xxx = @import("microzig").hal;
-const PowerSwitch = @import("./power_switch_control.zig").PowerSwitch;
+const PowerSwitch = @import("../../../domain/power_switch_control.zig").PowerSwitch;
 
 var gpio: rp2xxx.drivers.GPIO_Device = undefined;
 

@@ -14,14 +14,14 @@ Two host-side Zig CLI tools round out the dev loop: `flashy` (reboot-to-bootload
 picotool) and `serial-logger` (tails the USB serial log and auto-reflashes when the built `.uf2`
 changes).
 
-**Current implementation vs. `doc/`:** `doc/` (gitignored, so it exists locally but is never
-committed) contains a much more ambitious software spec
-(`sourdough-incubator-software-spec.md`) describing a future Python/Raspberry-Pi-SBC system with
-PID control, fermentation-phase estimation, persistent state, Grafana/InfluxDB logging, energy
-accounting, and a phone UI. None of that is implemented — the actual firmware in `src/` is the
-current, much simpler two-point controller. Don't assume the spec's modules (`SPEC-CTRL`,
-`SPEC-EST`, etc.) exist in code; treat that doc as design aspiration/talk notes, not a description
-of `src/main.zig`.
+**Current implementation vs. `doc/requirements/`:**
+`doc/requirements/software-spec.md` describes a much more ambitious future
+Python/Raspberry-Pi-SBC system with PID control, fermentation-phase estimation,
+persistent state, Grafana/InfluxDB logging, energy accounting, and a phone UI.
+None of that is implemented — the actual firmware in `src/` is the current,
+much simpler two-point controller. Don't assume the spec's modules
+(`SPEC-CTRL`, `SPEC-EST`, etc.) exist in code; treat that document as design
+aspiration/talk notes, not a description of `src/firmware/`.
 
 ## Commands
 
@@ -53,26 +53,26 @@ zig build run-serial-logger         # leave running; rebuilding + reflashing aut
 
 ## Architecture
 
-- `src/main.zig` — firmware entry point. Owns pin config (`pin_config`), the main polling loop,
-  the two-point heater control, and the ultrasonic distance measurement
-  (`measure_ultra_sound`/`waitForEchoStart`/`waitForEchoEnd`). The loop is non-blocking by design:
-  everything is driven off `time.get_time_since_boot()` deltas and `usb_cdc.poll()` calls, never
-  `time.sleep_ms` in a spot that would starve USB — see the "LED Freezing" lesson in
-  `doc/DEVLOG.md` for why blocking here is a real regression, not just a style nit. The Baker's
-  physical on/off toggle switch (GPIO18, pull-up, active-low) is read every loop iteration and fed
-  into `PowerSwitch`; when off, the heater is forced low but temperature/ultrasound sensing and
-  logging continue unchanged.
-- `src/power_switch.zig` — pure, hardware-free `PowerSwitch` (`switchOn`/`switchOff` methods over
-  a `PowerState` enum, no bare `bool` for the mode). Covered by `zig build test`; this is the only
-  module in the repo with unit tests, precisely because it has no MicroZig/GPIO dependency.
-- `src/helpers/usb_cdc.zig` — the USB CDC serial wrapper (`init`/`poll`/`write`/`read`) used for all
-  firmware logging. `write` bounds itself with a 10ms deadline so a disconnected/non-reading host
-  can't hang the main loop; a dropped log line is an accepted tradeoff, not a bug.
+- `src/firmware/main.zig` — firmware composition root. It initializes the board-specific
+  peripherals, polls USB, and invokes the application service.
+- `src/firmware/app/incubator.zig` — coordinates the periodic sensing, two-point heater control,
+  actuation, and serial logging. The Baker's physical on/off toggle switch (GPIO18, pull-up,
+  active-low) is read every loop iteration and fed into `PowerSwitch`; when off, the heater is
+  forced low but temperature/ultrasound sensing and logging continue unchanged.
+- `src/firmware/domain/` — pure, hardware-free control and state logic. `heater_control.zig` and
+  `power_switch_control.zig` are covered by `zig build test` precisely because they have no
+  MicroZig/GPIO dependency.
+- `src/firmware/platform/rp2040/` — board wiring and MicroZig adapters. In particular,
+  `transport/usb_cdc.zig` provides firmware logging and bounds `write` to a 10ms deadline so a
+  disconnected/non-reading host cannot hang the main loop; dropped debug lines are acceptable.
+  `drivers/ultrasonic.zig` accepts a keep-alive callback rather than importing USB directly.
+- `src/firmware/support/` — small firmware utilities such as the non-blocking ticker.
 - `build.zig` — defines the `blinky` firmware target for `raspberrypi.pico` via
   `MicroBuild(.{ .rp2xxx = true })`, plus the two host-side executables (`flashy`,
   `serial-logger`) built for the host target, each wired to a `run-*` build step.
 - `tools/flash.zig` / `tools/serial-logger.zig` — host-side CLI tools (compiled by `zig build`, not
-  scripts). `serial-logger.zig` watches the `.uf2` mtime and shells out to the built `flashy`
+  scripts) deliberately kept outside `src/firmware/` so they can move to a shared MicroZig-tools
+  repository. `serial-logger.zig` watches the `.uf2` mtime and shells out to the built `flashy`
   binary to reflash automatically; both hardcode the serial port name
   (`/dev/tty.usbmodemsomeserial1`, derived from the `.serial` string set in `usb_cdc.zig`) and the
   firmware path (`zig-out/firmware/blinky.uf2`), so if either changes, update both.
@@ -83,6 +83,7 @@ zig build run-serial-logger         # leave running; rebuilding + reflashing aut
 
 - macOS-specific serial/flashing quirks (permission-denied on `cp` to `/Volumes/RPI-RP2`,
   `stty`/bootloader detection, blocking `open()` without `O_NONBLOCK`) are documented with root
-  causes in `doc/DEVLOG.md` — check there before re-deriving a fix for a flashing/serial issue.
+  causes in `doc/development/DEVLOG.md` — check there before re-deriving a fix for a
+  flashing/serial issue.
 - Any new blocking work added to the main loop or to `usb_cdc.write` must not starve
   `usb_device.poll()`; follow the existing deadline pattern rather than adding bare `sleep`s.

@@ -1,7 +1,7 @@
 const rp2xxx = @import("microzig").hal;
 const cyw43 = rp2xxx.cyw43;
 const time = rp2xxx.time;
-const Blink = @import("./blink.zig");
+const Blink = @import("../../../domain/blink.zig");
 
 // This board is a Pico WH: the onboard LED lives behind the CYW43439
 // wireless chip (GPIO25 is the wireless SPI chip-select line instead), so

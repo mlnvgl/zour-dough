@@ -1,7 +1,7 @@
-const usb_cdc = @import("./helpers/usb_cdc.zig");
-const status_led = @import("./status_led.zig");
-const board = @import("./board.zig");
-const Fermenter = @import("./fermenter.zig");
+const usb_cdc = @import("./platform/rp2040/transport/usb_cdc.zig");
+const status_led = @import("./platform/rp2040/drivers/status_led.zig");
+const board = @import("./platform/rp2040/board/pico_wh.zig");
+const Incubator = @import("./app/incubator.zig");
 
 // Interval for the fermenter's periodic work (LED heartbeat, temp/heater
 // check, ultrasound read). fast: 100ms, slow: 500_000
@@ -12,11 +12,11 @@ pub fn main() !void {
 
     try init_peripherals();
 
-    var fermenter = try Fermenter.init(pins, MAIN_LOOP_INTERVAL_US);
+    var incubator = try Incubator.init(pins, MAIN_LOOP_INTERVAL_US);
 
     while (true) {
         usb_cdc.poll();
-        fermenter.poll();
+        incubator.poll();
     }
 }
 

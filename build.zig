@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
         .name = "blinky",
         .target = mb.ports.rp2xxx.boards.raspberrypi.pico,
         .optimize = .ReleaseSmall,
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = b.path("src/firmware/main.zig"),
     });
 
     const target = b.standardTargetOptions(.{});
@@ -49,7 +49,7 @@ pub fn build(b: *std.Build) void {
 
     const power_switch_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/power_switch_control.zig"),
+            .root_source_file = b.path("src/firmware/domain/power_switch_control.zig"),
             .target = target,
             .optimize = optimize,
         }),
@@ -60,7 +60,7 @@ pub fn build(b: *std.Build) void {
 
     const heater_control_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/heater_control.zig"),
+            .root_source_file = b.path("src/firmware/domain/heater_control.zig"),
             .target = target,
             .optimize = optimize,
         }),

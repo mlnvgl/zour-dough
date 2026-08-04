@@ -1,6 +1,5 @@
 const rp2xxx = @import("microzig").hal;
 const time = rp2xxx.time;
-const usb_cdc = @import("./helpers/usb_cdc.zig");
 
 const TRIGGER_US: u64 = 10;
 const SETTLE_US: u64 = 2;
@@ -21,11 +20,11 @@ pub fn init(trigger_pin: anytype, echo_pin: anytype) void {
     echo_gpio = rp2xxx.drivers.GPIO_Device.init(echo_pin);
 }
 
-fn waitForEchoStart() Error!u64 {
+fn waitForEchoStart(keep_alive: *const fn () void) Error!u64 {
     const wait_started_at = time.get_time_since_boot().to_us();
 
     while (try echo_gpio.read() == .low) {
-        usb_cdc.poll();
+        keep_alive();
         if (time.get_time_since_boot().to_us() - wait_started_at >= ECHO_TIMEOUT_US) {
             return error.EchoRiseTimeout;
         }
@@ -34,11 +33,11 @@ fn waitForEchoStart() Error!u64 {
     return time.get_time_since_boot().to_us();
 }
 
-fn waitForEchoEnd() Error!u64 {
+fn waitForEchoEnd(keep_alive: *const fn () void) Error!u64 {
     const wait_started_at = time.get_time_since_boot().to_us();
 
     while (try echo_gpio.read() == .high) {
-        usb_cdc.poll();
+        keep_alive();
         if (time.get_time_since_boot().to_us() - wait_started_at >= ECHO_TIMEOUT_US) {
             return error.EchoFallTimeout;
         }
@@ -48,7 +47,9 @@ fn waitForEchoEnd() Error!u64 {
 }
 
 // Distance to the dough surface in centimeters.
-pub fn measure() Error!f32 {
+// `keep_alive` lets the application service platform work such as USB while
+// this short, timing-sensitive measurement waits for an echo.
+pub fn measure(keep_alive: *const fn () void) Error!f32 {
     try trigger_gpio.set_direction(.output);
     try echo_gpio.set_direction(.input);
     try trigger_gpio.write(.low);
@@ -58,8 +59,8 @@ pub fn measure() Error!f32 {
     time.sleep_us(TRIGGER_US);
     try trigger_gpio.write(.low);
 
-    const echo_started_at = try waitForEchoStart();
-    const echo_ended_at = try waitForEchoEnd();
+    const echo_started_at = try waitForEchoStart(keep_alive);
+    const echo_ended_at = try waitForEchoEnd(keep_alive);
     const echo_duration_us = echo_ended_at - echo_started_at;
 
     return @as(f32, @floatFromInt(echo_duration_us)) * SOUND_SPEED_CM_PER_US / 2.0;

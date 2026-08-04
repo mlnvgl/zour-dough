@@ -1,15 +1,15 @@
 const rp2xxx = @import("microzig").hal;
 const time = rp2xxx.time;
-const usb_cdc = @import("./helpers/usb_cdc.zig");
-const board = @import("./board.zig");
-const status_led = @import("./status_led.zig");
-const Ticker = @import("./ticker.zig").Ticker;
-const heater = @import("./heater.zig");
-const heater_control = @import("./heater_control.zig");
-const temp_sensor = @import("./temp_sensor.zig");
-const ultra_sound = @import("./ultra_sound.zig");
-const power_switch = @import("./power_switch.zig");
-const PowerSwitch = @import("./power_switch_control.zig").PowerSwitch;
+const usb_cdc = @import("../platform/rp2040/transport/usb_cdc.zig");
+const board = @import("../platform/rp2040/board/pico_wh.zig");
+const status_led = @import("../platform/rp2040/drivers/status_led.zig");
+const Ticker = @import("../support/ticker.zig").Ticker;
+const heater = @import("../platform/rp2040/drivers/heater.zig");
+const heater_control = @import("../domain/heater_control.zig");
+const temp_sensor = @import("../platform/rp2040/drivers/temp_sensor.zig");
+const ultrasonic = @import("../platform/rp2040/drivers/ultrasonic.zig");
+const power_switch = @import("../platform/rp2040/drivers/power_switch.zig");
+const PowerSwitch = @import("../domain/power_switch_control.zig").PowerSwitch;
 
 const Self = @This();
 
@@ -23,7 +23,7 @@ pub fn init(pins: board.Pins, tick_interval_us: u64) !Self {
         usb_cdc.write("ds18b20 init failed: {s}\r\n", .{@errorName(err)});
     };
 
-    ultra_sound.init(pins.ultra_sound_trigger, pins.ultra_sound_echo);
+    ultrasonic.init(pins.ultra_sound_trigger, pins.ultra_sound_echo);
 
     heater.init(pins.heater);
     power_switch.init(pins.power_switch);
@@ -67,8 +67,8 @@ fn runCycle(self: *Self) void {
 
     time.sleep_ms(100);
 
-    const distance_cm = ultra_sound.measure() catch |err| {
-        usb_cdc.write("ultra sound read failed: {s}\r\n", .{@errorName(err)});
+    const distance_cm = ultrasonic.measure(usb_cdc.poll) catch |err| {
+        usb_cdc.write("ultrasonic read failed: {s}\r\n", .{@errorName(err)});
         return;
     };
     usb_cdc.write("distance_cm: {}\r\n", .{distance_cm});

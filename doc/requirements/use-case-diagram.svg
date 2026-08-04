@@ -1,0 +1,117 @@
+<svg viewBox="0 0 1180 860" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',Arial,sans-serif">
+  <defs>
+    <style>
+      .box{fill:#f8fafc;stroke:#cbd5e1;stroke-width:1.5;}
+      .uc-user{fill:#dbeafe;stroke:#3b82f6;stroke-width:1.6;}
+      .uc-auto{fill:#dcfce7;stroke:#22c55e;stroke-width:1.6;}
+      .uc-safe{fill:#fee2e2;stroke:#ef4444;stroke-width:1.6;}
+      .uc-energy{fill:#fef9c3;stroke:#eab308;stroke-width:1.6;}
+      .uct{font-size:12.5px;fill:#0f172a;text-anchor:middle;}
+      .assoc{stroke:#475569;stroke-width:1.4;fill:none;}
+      .rel{stroke:#64748b;stroke-width:1.4;stroke-dasharray:5 4;fill:none;}
+      .rell{font-size:11px;fill:#475569;text-anchor:middle;font-style:italic;}
+      .actor{stroke:#1e293b;stroke-width:1.8;fill:none;stroke-linecap:round;}
+      .actort{font-size:13px;fill:#0f172a;font-weight:600;text-anchor:middle;}
+      .title{font-size:19px;fill:#0f172a;font-weight:700;text-anchor:middle;}
+      .sub{font-size:12.5px;fill:#64748b;text-anchor:middle;}
+      .legt{font-size:12px;fill:#334155;}
+    </style>
+    <marker id="arr" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#64748b" stroke-width="1.4"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="590" y="30" class="title">Sourdough Incubator — Use Case Diagram</text>
+  <text x="590" y="49" class="sub">Primary actor: Baker · Supporting actors: Scheduler, Energy Meter, Monitoring</text>
+
+  <!-- System boundary -->
+  <rect x="275" y="62" width="570" height="710" rx="10" class="box"/>
+  <text x="560" y="82" class="uct" font-weight="700" fill="#334155">Sourdough Incubator System</text>
+
+  <!-- ================= ASSOCIATIONS (drawn first, under nodes) ================= -->
+  <!-- Baker (90,306) -> left column left edges (330,cy) -->
+  <path class="assoc" d="M90,306 L330,90"/>
+  <path class="assoc" d="M90,306 L330,162"/>
+  <path class="assoc" d="M90,306 L330,258"/>
+  <path class="assoc" d="M90,306 L330,350"/>
+  <path class="assoc" d="M90,306 L330,442"/>
+  <path class="assoc" d="M90,306 L330,534"/>
+  <!-- Energy Meter (90,620) -> Measure energy left edge -->
+  <path class="assoc" d="M90,620 L330,626"/>
+  <!-- Scheduler (1055,300) -> right column right edges (835,cy) -->
+  <path class="assoc" d="M1055,300 L835,95"/>
+  <path class="assoc" d="M1055,300 L835,265"/>
+  <path class="assoc" d="M1055,300 L835,360"/>
+  <path class="assoc" d="M1055,300 L835,452"/>
+  <path class="assoc" d="M1055,300 L835,544"/>
+  <path class="assoc" d="M1055,300 L835,636"/>
+  <path class="assoc" d="M1055,300 L835,728"/>
+  <!-- Monitoring (1055,690) -> Log data right edge -->
+  <path class="assoc" d="M1055,690 L835,728"/>
+
+  <!-- ================= INCLUDE / EXTEND (dashed) ================= -->
+  <!-- includes into Estimate phase (R2) -->
+  <path class="rel" marker-end="url(#arr)" d="M530,258 L622,264"/>
+  <text x="576" y="248" class="rell">&#171;include&#187;</text>
+  <path class="rel" marker-end="url(#arr)" d="M625,452 C660,400 685,330 695,294"/>
+  <text x="612" y="420" class="rell">&#171;include&#187;</text>
+  <path class="rel" marker-end="url(#arr)" d="M625,544 C650,460 672,340 682,294"/>
+  <text x="602" y="512" class="rell">&#171;include&#187;</text>
+  <path class="rel" marker-end="url(#arr)" d="M625,636 C645,500 662,350 670,294"/>
+  <text x="596" y="600" class="rell">&#171;include&#187;</text>
+  <!-- Measure energy include Log data -->
+  <path class="rel" marker-end="url(#arr)" d="M530,626 C575,660 590,700 622,724"/>
+  <text x="556" y="678" class="rell">&#171;include&#187;</text>
+  <!-- Enforce fail-safe extends Regulate temperature -->
+  <path class="rel" marker-end="url(#arr)" d="M730,142 L730,125"/>
+  <text x="775" y="136" class="rell">&#171;extend&#187;</text>
+  <!-- Confirm/mark feed extends Detect feed event -->
+  <path class="rel" marker-end="url(#arr)" d="M530,350 L622,358"/>
+  <text x="576" y="338" class="rell">&#171;extend&#187;</text>
+
+  <!-- ================= USE CASES ================= -->
+  <!-- Left column (user goals) cx=430 rx=100 -->
+  <ellipse cx="430" cy="90"  rx="100" ry="28" class="uc-user"/><text x="430" y="94" class="uct">Set setpoint</text>
+  <ellipse cx="430" cy="162" rx="100" ry="28" class="uc-user"/><text x="430" y="166" class="uct">Turn on / off</text>
+  <ellipse cx="430" cy="258" rx="100" ry="28" class="uc-user"/><text x="430" y="262" class="uct">Check status &amp; mood</text>
+  <ellipse cx="430" cy="350" rx="100" ry="28" class="uc-user"/><text x="430" y="354" class="uct">Confirm / mark feed</text>
+  <ellipse cx="430" cy="442" rx="100" ry="28" class="uc-user"/><text x="430" y="446" class="uct">View camera stream</text>
+  <ellipse cx="430" cy="534" rx="100" ry="28" class="uc-user"/><text x="430" y="538" class="uct">View energy &amp; savings</text>
+  <ellipse cx="430" cy="626" rx="100" ry="28" class="uc-energy"/><text x="430" y="630" class="uct">Measure energy</text>
+
+  <!-- Right column (autonomous / system) cx=730 rx=105 -->
+  <ellipse cx="730" cy="95"  rx="105" ry="28" class="uc-auto"/><text x="730" y="99" class="uct">Regulate temperature</text>
+  <ellipse cx="730" cy="170" rx="105" ry="28" class="uc-safe"/><text x="730" y="174" class="uct">Enforce fail-safe</text>
+  <ellipse cx="730" cy="265" rx="105" ry="28" class="uc-auto"/>
+    <text x="730" y="261" class="uct">Estimate</text><text x="730" y="277" class="uct">fermentation phase</text>
+  <ellipse cx="730" cy="360" rx="105" ry="28" class="uc-auto"/><text x="730" y="364" class="uct">Detect feed event (auto)</text>
+  <ellipse cx="730" cy="452" rx="105" ry="28" class="uc-auto"/><text x="730" y="456" class="uct">Send feed reminder</text>
+  <ellipse cx="730" cy="544" rx="105" ry="28" class="uc-auto"/><text x="730" y="548" class="uct">Send bake-ready alert</text>
+  <ellipse cx="730" cy="636" rx="105" ry="28" class="uc-auto"/><text x="730" y="640" class="uct">Assess health</text>
+  <ellipse cx="730" cy="728" rx="105" ry="28" class="uc-auto"/><text x="730" y="732" class="uct">Log data</text>
+
+  <!-- ================= ACTORS ================= -->
+  <!-- Baker -->
+  <g class="actor"><circle cx="90" cy="278" r="11"/><line x1="90" y1="289" x2="90" y2="323"/><line x1="72" y1="300" x2="108" y2="300"/><line x1="90" y1="323" x2="76" y2="346"/><line x1="90" y1="323" x2="104" y2="346"/></g>
+  <text x="90" y="364" class="actort">Baker</text>
+  <!-- Energy Meter -->
+  <g class="actor"><circle cx="90" cy="592" r="11"/><line x1="90" y1="603" x2="90" y2="637"/><line x1="72" y1="614" x2="108" y2="614"/><line x1="90" y1="637" x2="76" y2="660"/><line x1="90" y1="637" x2="104" y2="660"/></g>
+  <text x="90" y="678" class="actort">Energy Meter</text>
+  <!-- Scheduler -->
+  <g class="actor"><circle cx="1055" cy="272" r="11"/><line x1="1055" y1="283" x2="1055" y2="317"/><line x1="1037" y1="294" x2="1073" y2="294"/><line x1="1055" y1="317" x2="1041" y2="340"/><line x1="1055" y1="317" x2="1069" y2="340"/></g>
+  <text x="1055" y="358" class="actort">Scheduler / Time</text>
+  <!-- Monitoring -->
+  <g class="actor"><circle cx="1055" cy="662" r="11"/><line x1="1055" y1="673" x2="1055" y2="707"/><line x1="1037" y1="684" x2="1073" y2="684"/><line x1="1055" y1="707" x2="1041" y2="730"/><line x1="1055" y1="707" x2="1069" y2="730"/></g>
+  <text x="1055" y="748" class="actort">Monitoring (Grafana)</text>
+
+  <!-- ================= LEGEND ================= -->
+  <line x1="40" y1="808" x2="80" y2="808" class="assoc"/>
+  <text x="88" y="812" class="legt">association</text>
+  <line x1="230" y1="808" x2="270" y2="808" class="rel" marker-end="url(#arr)"/>
+  <text x="278" y="812" class="legt">&#171;include&#187; / &#171;extend&#187;</text>
+  <rect x="40" y="828" width="16" height="12" class="uc-user"/><text x="62" y="838" class="legt">user goal</text>
+  <rect x="150" y="828" width="16" height="12" class="uc-auto"/><text x="172" y="838" class="legt">autonomous / system</text>
+  <rect x="330" y="828" width="16" height="12" class="uc-safe"/><text x="352" y="838" class="legt">safety</text>
+  <rect x="420" y="828" width="16" height="12" class="uc-energy"/><text x="442" y="838" class="legt">energy</text>
+</svg>

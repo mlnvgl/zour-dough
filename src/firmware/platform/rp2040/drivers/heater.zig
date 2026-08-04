@@ -1,5 +1,5 @@
 const rp2xxx = @import("microzig").hal;
-pub const HeaterState = @import("./heater_control.zig").HeaterState;
+pub const HeaterState = @import("../../../domain/heater_control.zig").HeaterState;
 
 var gpio: rp2xxx.drivers.GPIO_Device = undefined;
 

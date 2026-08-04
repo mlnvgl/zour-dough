@@ -1,4 +1,4 @@
-# Zour-Dough: Zig-Powered Enviroment for your sour dough starter
+# Zour-Dough: Zig-powered environment for your sourdough starter
 
 ## Hardware
 
@@ -17,11 +17,21 @@ Detailed inventories:
 
 ## Development
 
-1. Zig build
-2. Flash
-    - install picotool via ``` brew install picotool ``` which is neccessary for flashing process
-    - run ``` zig run tools/flash.zig ```
+Requires Zig 0.15.x and `picotool`:
 
-3. Start serial loggers
-    - open new terminal
-    - run ``` zig run tools/serial-logger.zig ```
+```sh
+brew install picotool
+zig build
+zig build run-flashy
+zig build run-serial-logger
+```
+
+## Architecture
+
+- `src/firmware/domain/` contains hardware-free control and state logic.
+- `src/firmware/app/` coordinates sensing, control, actuation, and telemetry.
+- `src/firmware/platform/rp2040/` contains board wiring and MicroZig-specific
+  device and transport adapters.
+- `src/firmware/support/` contains small firmware utilities.
+- `tools/` contains native host tools. It intentionally remains independent
+  from firmware code so it can move to a reusable MicroZig tools repository.
