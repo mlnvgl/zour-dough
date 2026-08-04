@@ -56,7 +56,7 @@ fn runCycle(self: *Self) void {
     };
     usb_cdc.write("temp: {}\r\n", .{temp});
 
-    self.heater_state = heater_control.decide(temp, self.power_switch_state.state, self.heater_state);
+    self.decideHeaterState(temp);
     heater.set(self.heater_state) catch |err| {
         usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
         return;
@@ -72,4 +72,22 @@ fn runCycle(self: *Self) void {
         return;
     };
     usb_cdc.write("distance_cm: {}\r\n", .{distance_cm});
+}
+
+fn decideHeaterState(self: *Self, temp: f32) void {
+    self.heater_state = heater_control.decide(temp, self.power_switch_state.state, self.heater_state);
+}
+
+test "incubator turns off the heater command after the power switch is switched off" {
+    var incubator = Self{
+        .ticker = .{ .interval_us = 1 },
+    };
+    incubator.power_switch_state.switchOn();
+
+    incubator.decideHeaterState(heater_control.TEMP_THRESHOLD_MIN - 1);
+    try @import("std").testing.expectEqual(heater_control.HeaterState.on, incubator.heater_state);
+
+    incubator.power_switch_state.switchOff();
+    incubator.decideHeaterState(heater_control.TEMP_THRESHOLD_MIN - 1);
+    try @import("std").testing.expectEqual(heater_control.HeaterState.off, incubator.heater_state);
 }

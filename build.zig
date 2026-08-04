@@ -68,6 +68,16 @@ pub fn build(b: *std.Build) void {
     const run_heater_control_tests = b.addRunArtifact(heater_control_tests);
     test_step.dependOn(&run_heater_control_tests.step);
 
+    const incubator_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/firmware/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    const run_incubator_tests = b.addRunArtifact(incubator_tests);
+    test_step.dependOn(&run_incubator_tests.step);
+
     // We call this twice to demonstrate that the default binary output for
     // RP2040 is UF2, but we can also output other formats easily
     mb.install_firmware(firmware, .{});
