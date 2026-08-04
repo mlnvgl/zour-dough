@@ -9,9 +9,8 @@ const MAIN_LOOP_INTERVAL_US: u64 = 800_000;
 
 pub fn main() !void {
     const pins = board.apply();
-    try status_led.init();
-    status_led.bootBlink();
-    usb_cdc.init();
+
+    try init_peripherals();
 
     var fermenter = try Fermenter.init(pins, MAIN_LOOP_INTERVAL_US);
 
@@ -19,4 +18,10 @@ pub fn main() !void {
         usb_cdc.poll();
         fermenter.poll();
     }
+}
+
+pub fn init_peripherals() !void {
+    try status_led.init();
+    status_led.bootBlink();
+    usb_cdc.init();
 }
