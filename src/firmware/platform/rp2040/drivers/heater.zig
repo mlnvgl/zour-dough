@@ -10,5 +10,5 @@ pub fn init(pin: anytype) void {
 // Mechanical GPIO write only; when/why the heater should be on is a control
 // decision that stays with the caller.
 pub fn set(state: HeaterState) rp2xxx.drivers.GPIO_Device.WriteError!void {
-    try gpio.write(if (state == .on) .high else .low);
+    try gpio.write(if (state == .heating) .high else .low);
 }

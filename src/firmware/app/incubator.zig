@@ -14,7 +14,7 @@ const PowerSwitch = @import("../domain/power_switch_control.zig").PowerSwitch;
 const Self = @This();
 
 ticker: Ticker,
-heater_state: heater_control.HeaterState = .off,
+heater_state: heater_control.HeaterState = .power_off,
 power_switch_state: PowerSwitch = .{},
 
 pub fn init(pins: board.Pins, tick_interval_us: u64) !Self {
@@ -44,10 +44,10 @@ pub fn poll(self: *Self) void {
     const now = time.get_time_since_boot().to_us();
     if (!self.ticker.ready(now)) return;
 
-    self.runCycle();
+    self.runCycle(now);
 }
 
-fn runCycle(self: *Self) void {
+fn runCycle(self: *Self, now_us: u64) void {
     status_led.toggle();
 
     const temp = temp_sensor.read() catch |err| {
@@ -56,7 +56,7 @@ fn runCycle(self: *Self) void {
     };
     usb_cdc.write("temp: {}\r\n", .{temp});
 
-    self.decideHeaterState(temp);
+    self.decideHeaterState(temp, now_us);
     heater.set(self.heater_state) catch |err| {
         usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
         return;
@@ -74,8 +74,8 @@ fn runCycle(self: *Self) void {
     usb_cdc.write("distance_cm: {}\r\n", .{distance_cm});
 }
 
-fn decideHeaterState(self: *Self, temp: f32) void {
-    self.heater_state = heater_control.decide(temp, self.power_switch_state.state, self.heater_state);
+fn decideHeaterState(self: *Self, temp: f32, now_us: u64) void {
+    self.heater_state = heater_control.decide(temp, self.power_switch_state.state, self.heater_state, now_us);
 }
 
 test "incubator turns off the heater command after the power switch is switched off" {
@@ -84,10 +84,13 @@ test "incubator turns off the heater command after the power switch is switched 
     };
     incubator.power_switch_state.switchOn();
 
-    incubator.decideHeaterState(heater_control.TEMP_THRESHOLD_MIN - 1);
-    try @import("std").testing.expectEqual(heater_control.HeaterState.on, incubator.heater_state);
+    incubator.decideHeaterState(heater_control.TEMP_THRESHOLD_MIN - 1, 100);
+    try @import("std").testing.expectEqual(
+        heater_control.HeaterState{ .heating = .{ .since_us = 100 } },
+        incubator.heater_state,
+    );
 
     incubator.power_switch_state.switchOff();
-    incubator.decideHeaterState(heater_control.TEMP_THRESHOLD_MIN - 1);
-    try @import("std").testing.expectEqual(heater_control.HeaterState.off, incubator.heater_state);
+    incubator.decideHeaterState(heater_control.TEMP_THRESHOLD_MIN - 1, 200);
+    try @import("std").testing.expectEqual(heater_control.HeaterState.power_off, incubator.heater_state);
 }
