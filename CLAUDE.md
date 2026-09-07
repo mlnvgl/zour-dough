@@ -38,9 +38,9 @@ already resolves to 0.15.x):
 ```bash
 alias zig=/opt/homebrew/opt/zig@0.15/bin/zig  # this machine only; skip if `zig` is already 0.15.x
 
-zig build                    # build firmware (zig-out/firmware/blinky.uf2 + .elf) and host tools
+zig build                    # build firmware (zig-out/firmware/zourdough.uf2 + .elf) and host tools
 zig build test                # run host-side unit tests (currently: src/power_switch.zig)
-zig build run-flashy         # flash zig-out/firmware/blinky.uf2 to the Pico via picotool
+zig build run-flashy         # flash zig-out/firmware/zourdough.uf2 to the Pico via picotool
 zig build run-serial-logger  # tail USB serial output; auto-reflashes when the .uf2 changes
 ```
 
@@ -67,7 +67,7 @@ zig build run-serial-logger         # leave running; rebuilding + reflashing aut
   disconnected/non-reading host cannot hang the main loop; dropped debug lines are acceptable.
   `drivers/ultrasonic.zig` accepts a keep-alive callback rather than importing USB directly.
 - `src/firmware/support/` — small firmware utilities such as the non-blocking ticker.
-- `build.zig` — defines the `blinky` firmware target for `raspberrypi.pico` via
+- `build.zig` — defines the `zourdough` firmware target for `raspberrypi.pico` via
   `MicroBuild(.{ .rp2xxx = true })`, plus the two host-side executables (`flashy`,
   `serial-logger`) built for the host target, each wired to a `run-*` build step.
 - `tools/flash.zig` / `tools/serial-logger.zig` — host-side CLI tools (compiled by `zig build`, not
@@ -75,7 +75,7 @@ zig build run-serial-logger         # leave running; rebuilding + reflashing aut
   repository. `serial-logger.zig` watches the `.uf2` mtime and shells out to the built `flashy`
   binary to reflash automatically; both hardcode the serial port name
   (`/dev/tty.usbmodemsomeserial1`, derived from the `.serial` string set in `usb_cdc.zig`) and the
-  firmware path (`zig-out/firmware/blinky.uf2`), so if either changes, update both.
+  firmware path (`zig-out/firmware/zourdough.uf2`), so if either changes, update both.
 - `inventory/BOM.md` / `inventory/SBOM.cdx.json` — hardware and software bill of materials; keep in
   sync with real hardware/dependency changes rather than treating them as historical records.
 

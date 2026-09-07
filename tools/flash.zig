@@ -8,7 +8,7 @@
 
 const std = @import("std");
 
-const UF2_PATH = "zig-out/firmware/blinky.uf2";
+const UF2_PATH = "zig-out/firmware/zourdough.uf2";
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;

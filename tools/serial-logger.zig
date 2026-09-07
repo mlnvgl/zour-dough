@@ -16,7 +16,7 @@
 const std = @import("std");
 
 const SERIAL_PORT = "/dev/tty.usbmodemsomeserial1";
-const UF2_PATH = "zig-out/firmware/blinky.uf2";
+const UF2_PATH = "zig-out/firmware/zourdough.uf2";
 
 fn waitForSerial() void {
     while (true) {
