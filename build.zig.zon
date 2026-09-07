@@ -36,6 +36,10 @@
             .url = "git+https://github.com/ZigEmbeddedGroup/microzig.git#1ce2b381a14dad405b2de7e43c5a0ff8d371adea",
             .hash = "microzig-0.15.0-D20YSS2V3QBZpYyKr6sDFSqknwN1TiPh3jaMLMazrpCV",
         },
+        .font8x8 = .{
+            .url = "git+https://github.com/Gnyblast/zig-ssd1306-gddram-fonts#84dd5fab70ddc1198eef1cd1305cc82f08f419dc",
+            .hash = "ssd1306_font_8x8-0.0.0-oGb_cERcAAA6NJzWDOMepgnY6r4blNEHjpkldDaRAui5",
+        },
     },
     .paths = .{
         "build.zig",

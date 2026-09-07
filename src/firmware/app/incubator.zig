@@ -10,14 +10,16 @@ const temp_sensor = @import("../platform/rp2040/drivers/temp_sensor.zig");
 const ultrasonic = @import("../platform/rp2040/drivers/ultrasonic.zig");
 const power_switch = @import("../platform/rp2040/drivers/power_switch.zig");
 const PowerSwitch = @import("../domain/power_switch_control.zig").PowerSwitch;
+const Readings = @import("./readings.zig").Readings;
 
 const Self = @This();
 
 ticker: Ticker,
+readings: *Readings,
 heater_state: heater_control.HeaterState = .power_off,
 power_switch_state: PowerSwitch = .{},
 
-pub fn init(pins: board.Pins, tick_interval_us: u64) !Self {
+pub fn init(pins: board.Pins, tick_interval_us: u64, readings: *Readings) !Self {
     try temp_sensor.init(pins.temp);
     temp_sensor.configure() catch |err| {
         usb_cdc.write("ds18b20 init failed: {s}\r\n", .{@errorName(err)});
@@ -28,7 +30,7 @@ pub fn init(pins: board.Pins, tick_interval_us: u64) !Self {
     heater.init(pins.heater);
     power_switch.init(pins.power_switch);
 
-    const self = Self{ .ticker = .{ .interval_us = tick_interval_us } };
+    const self = Self{ .ticker = .{ .interval_us = tick_interval_us }, .readings = readings };
     heater.set(self.heater_state) catch |err| {
         usb_cdc.write("heater init failed: {s}\r\n", .{@errorName(err)});
     };
@@ -36,8 +38,6 @@ pub fn init(pins: board.Pins, tick_interval_us: u64) !Self {
     return self;
 }
 
-// Reads the power switch every call (cheap, no cadence needed), then runs a
-// full sense/decide/act cycle whenever the ticker says it's time.
 pub fn poll(self: *Self) void {
     power_switch.read(&self.power_switch_state);
 
@@ -55,8 +55,13 @@ fn runCycle(self: *Self, now_us: u64) void {
         return;
     };
     usb_cdc.write("temp: {}\r\n", .{temp});
+    self.readings.recordTemp(temp);
 
     self.decideHeaterState(temp, now_us);
+    self.readings.recordHeat(switch (self.heater_state) {
+        .heating => .heating,
+        else => .idle,
+    });
     heater.set(self.heater_state) catch |err| {
         usb_cdc.write("heater write failed: {s}\r\n", .{@errorName(err)});
         return;
@@ -69,9 +74,11 @@ fn runCycle(self: *Self, now_us: u64) void {
 
     const distance_cm = ultrasonic.measure(usb_cdc.poll) catch |err| {
         usb_cdc.write("ultrasonic read failed: {s}\r\n", .{@errorName(err)});
+        self.readings.recordDistanceTimeout();
         return;
     };
     usb_cdc.write("distance_cm: {}\r\n", .{distance_cm});
+    self.readings.recordDistance(distance_cm);
 }
 
 fn decideHeaterState(self: *Self, temp: f32, now_us: u64) void {
@@ -79,8 +86,10 @@ fn decideHeaterState(self: *Self, temp: f32, now_us: u64) void {
 }
 
 test "incubator turns off the heater command after the power switch is switched off" {
+    var readings: Readings = .{};
     var incubator = Self{
         .ticker = .{ .interval_us = 1 },
+        .readings = &readings,
     };
     incubator.power_switch_state.switchOn();
 

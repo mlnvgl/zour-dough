@@ -11,6 +11,8 @@ This BOM reflects only parts that are explicitly documented in the repository or
 | Raspberry Pi Pico (RP2040 board) | 1 | Confirmed | `build.zig`, `README.md` | Build target is `raspberrypi.pico`. |
 | IRLZ44N N-channel MOSFET | 1 | Confirmed | `README.md` | Listed as the switching transistor. |
 | DS18B20 temperature sensor | 1 | Confirmed | `README.md`, `src/firmware/platform/rp2040/board/pico_wh.zig` | Firmware initializes a DS18B20 driver on GPIO22. |
+| HC-SR04 ultrasonic sensor | 1 | Confirmed | `src/firmware/platform/rp2040/board/pico_wh.zig`, `src/firmware/platform/rp2040/drivers/ultrasonic.zig` | Trigger on GPIO20, echo on GPIO19; measures dough height/rise. |
+| SSD1306 OLED display, 128x64, I2C | 1 | Confirmed | `src/firmware/platform/rp2040/board/pico_wh.zig`, `src/firmware/platform/rp2040/drivers/oled.zig` | I2C0 at 400 kHz, address 0x3C; SDA on GPIO0, SCL on GPIO1. |
 | Polyimide heater film, 24 V / 30 W, 45 mm x 100 mm | 1+ | Confirmed | `README.md` | README mentions a 4-pack purchase, but installed quantity is not stated. |
 | Resistor for MOSFET control line to negative rail | 1 | Partially identified | User note, `README.md` | This is a pull-down, not a pull-up, based on the described placement. Value is currently unknown. |
 | Binary on/off toggle switch | 1 | Confirmed | `src/firmware/platform/rp2040/board/pico_wh.zig` | Wired to GND on GPIO18 with internal pull-up (active-low); toggling it forces the heater off without stopping sensing/logging. |
