@@ -36,6 +36,10 @@ pub fn textRow(page: u3, row: *const [16]u8) void {
     @memcpy(fb.pixel_data[@as(usize, page) * 128 ..][0..128], &gdram);
 }
 
+pub fn invertRow(page: u3) void {
+    for (fb.pixel_data[@as(usize, page) * 128 ..][0..128]) |*byte| byte.* = ~byte.*;
+}
+
 pub fn hline(y: u6) void {
     for (0..128) |x| fb.set_pixel(@intCast(x), y, .white);
 }

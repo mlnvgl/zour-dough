@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const BOOT_BLINK_COUNT: u32 = 5;
 pub const BOOT_BLINK_INTERVAL_MS: u32 = 100;
 
@@ -12,6 +14,20 @@ pub const LedState = enum {
         };
     }
 };
+
+pub const Mode = enum { solid, heartbeat };
+
+pub const Beat = enum { hold, toggle };
+
+pub fn desired(current: LedState, mode: Mode, beat: Beat) LedState {
+    return switch (mode) {
+        .solid => .on,
+        .heartbeat => switch (beat) {
+            .hold => current,
+            .toggle => current.toggled(),
+        },
+    };
+}
 
 // Fixed-count blink sequence used as a visual "flash succeeded" confirmation
 // right after boot, before the main loop's heartbeat takes over. Pure state
@@ -35,3 +51,18 @@ pub const BootBlink = struct {
         return self.state;
     }
 };
+
+test "desired holds the led on in solid mode" {
+    try std.testing.expectEqual(LedState.on, desired(.off, .solid, .hold));
+    try std.testing.expectEqual(LedState.on, desired(.on, .solid, .toggle));
+}
+
+test "desired toggles the led when the heartbeat fires" {
+    try std.testing.expectEqual(LedState.on, desired(.off, .heartbeat, .toggle));
+    try std.testing.expectEqual(LedState.off, desired(.on, .heartbeat, .toggle));
+}
+
+test "desired keeps the led between heartbeats" {
+    try std.testing.expectEqual(LedState.off, desired(.off, .heartbeat, .hold));
+    try std.testing.expectEqual(LedState.on, desired(.on, .heartbeat, .hold));
+}

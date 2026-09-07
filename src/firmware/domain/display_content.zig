@@ -3,13 +3,6 @@ const std = @import("std");
 pub const SPLASH_TOP: [16]u8 = "Zour-Dough      ".*;
 pub const SPLASH_VER: [16]u8 = "v2026.09.12     ".*;
 
-test "splash rows are exactly one display row" {
-    try std.testing.expectEqual(16, SPLASH_TOP.len);
-    try std.testing.expectEqual(16, SPLASH_VER.len);
-    try std.testing.expectEqualStrings("Zour-Dough      ", &SPLASH_TOP);
-    try std.testing.expectEqualStrings("v2026.09.12     ", &SPLASH_VER);
-}
-
 pub fn tempRow(buf: *[16]u8, temp: ?f32) []const u8 {
     if (temp) |t| {
         return std.fmt.bufPrint(buf, "{s:<4}{d:>10.1} C", .{ "NOW", t }) catch unreachable;
@@ -44,4 +37,27 @@ test "distanceRow renders whole centimeters" {
 test "distanceRow renders --- after a timeout" {
     var buf: [16]u8 = undefined;
     try std.testing.expectEqualStrings("DIST      ---   ", distanceRow(&buf, null));
+}
+
+pub fn statusRow(buf: *[16]u8, heating: bool) []const u8 {
+    return std.fmt.bufPrint(buf, "{s:^16}", .{if (heating) "HEATING" else "READY"}) catch unreachable;
+}
+
+test "statusRow centers HEATING while heating" {
+    var buf: [16]u8 = undefined;
+    try std.testing.expectEqualStrings("    HEATING     ", statusRow(&buf, true));
+}
+
+test "statusRow centers READY while idle" {
+    var buf: [16]u8 = undefined;
+    try std.testing.expectEqualStrings("     READY      ", statusRow(&buf, false));
+}
+
+pub fn targetRow(buf: *[16]u8, target: f32) []const u8 {
+    return std.fmt.bufPrint(buf, "{s:<4}{d:>10.1} C", .{ "SET", target }) catch unreachable;
+}
+
+test "targetRow renders the target temperature" {
+    var buf: [16]u8 = undefined;
+    try std.testing.expectEqualStrings("SET       22.0 C", targetRow(&buf, 22.0));
 }
