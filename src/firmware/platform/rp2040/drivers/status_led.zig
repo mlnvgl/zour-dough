@@ -1,26 +1,17 @@
 const rp2xxx = @import("microzig").hal;
-const cyw43 = rp2xxx.cyw43;
 const time = rp2xxx.time;
+
+// TODO: should not know anything about domain logic
 const Blink = @import("../../../domain/blink.zig");
 
-// This board is a Pico WH: the onboard LED lives behind the CYW43439
-// wireless chip (GPIO25 is the wireless SPI chip-select line instead), so
-// it's driven via `cyw43.gpio.put` rather than a plain GPIO pin.
-pub fn init() !void {
-    try cyw43.init();
+var gpio: rp2xxx.drivers.GPIO_Device = undefined;
+
+pub fn init(pin: anytype) void {
+    gpio = rp2xxx.drivers.GPIO_Device.init(pin);
 }
 
 pub fn set(state: Blink.LedState) void {
-    cyw43.gpio.put(.led, state == .on);
-}
-
-var heartbeat_state: Blink.LedState = .off;
-
-// Flips the heartbeat LED. Caller decides *when* (loop cadence lives with
-// the caller); this just owns the on/off state itself.
-pub fn toggle() void {
-    heartbeat_state = heartbeat_state.toggled();
-    set(heartbeat_state);
+    gpio.write(if (state == .on) .high else .low) catch {};
 }
 
 // Visual "flash succeeded" confirmation: blink fast a few times before the

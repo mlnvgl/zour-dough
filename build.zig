@@ -9,11 +9,16 @@ pub fn build(b: *std.Build) void {
     const mz_dep = b.dependency("microzig", .{});
     const mb = MicroBuild.init(b, mz_dep) orelse return;
 
+    const font8x8_dep = b.dependency("font8x8", .{});
+
     const firmware = mb.add_firmware(.{
         .name = "zourdough",
         .target = mb.ports.rp2xxx.boards.raspberrypi.pico,
         .optimize = .ReleaseSmall,
         .root_source_file = b.path("src/firmware/main.zig"),
+        .imports = &.{
+            .{ .name = "font8x8", .module = font8x8_dep.module("font8x8") },
+        },
     });
 
     const target = b.standardTargetOptions(.{});
@@ -47,36 +52,29 @@ pub fn build(b: *std.Build) void {
     const run_seriallogger_cmd = b.addRunArtifact(serial_logger);
     run_seriallogger_step.dependOn(&run_seriallogger_cmd.step);
 
-    const power_switch_tests = b.addTest(.{
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/firmware/domain/power_switch_control.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    const run_power_switch_tests = b.addRunArtifact(power_switch_tests);
+    const test_files = [_][]const u8{
+        "src/firmware/domain/power_switch_control.zig",
+        "src/firmware/domain/heater_control.zig",
+        "src/firmware/domain/display_content.zig",
+        "src/firmware/domain/rotary_control.zig",
+        "src/firmware/support/timing.zig",
+        "src/firmware/domain/readings.zig",
+        "src/firmware/domain/blink.zig",
+        "src/firmware/main.zig",
+    };
+
     const test_step = b.step("test", "run unit tests");
-    test_step.dependOn(&run_power_switch_tests.step);
-
-    const heater_control_tests = b.addTest(.{
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/firmware/domain/heater_control.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    const run_heater_control_tests = b.addRunArtifact(heater_control_tests);
-    test_step.dependOn(&run_heater_control_tests.step);
-
-    const incubator_tests = b.addTest(.{
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/firmware/main.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    const run_incubator_tests = b.addRunArtifact(incubator_tests);
-    test_step.dependOn(&run_incubator_tests.step);
+    for (test_files) |file| {
+        const t = b.addTest(.{
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(file),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        const run_t = b.addRunArtifact(t);
+        test_step.dependOn(&run_t.step);
+    }
 
     // We call this twice to demonstrate that the default binary output for
     // RP2040 is UF2, but we can also output other formats easily

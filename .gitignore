@@ -3,11 +3,13 @@
 zig-cache/
 zig-out/
 .zig-out/
+zig-pkg/
 build/
 build-*/
 doc/reference/
 doc/development/
 doc/zigtober/
+zig-pkg/
 
 # Zig object/header outputs (if you emit them into repo build dirs)
 *.o
