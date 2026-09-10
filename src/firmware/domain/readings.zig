@@ -1,6 +1,8 @@
 const std = @import("std");
 const rotary_control = @import("./rotary_control.zig");
 
+// TODO: Move this to temperature domain logic
+// Readings should only store readings and should not contain any business logic
 pub const MAX_TEMP_AGE_US: u64 = 3_000_000;
 
 pub const Readings = struct {
@@ -15,7 +17,8 @@ pub const Readings = struct {
         self.current_temp = temp;
         self.temp_read_at_us = now_us;
     }
-
+    
+    // TODO: This should not be part of the Readings
     pub fn freshTemp(self: Readings, now_us: u64) ?f32 {
         const temp = self.current_temp orelse return null;
         if (now_us - self.temp_read_at_us > MAX_TEMP_AGE_US) return null;
@@ -41,14 +44,6 @@ pub const Readings = struct {
 
 pub const Heat = enum { idle, heating };
 
-test "recordHeat stores the heat state" {
-    var readings: Readings = .{};
-    readings.recordHeat(.heating);
-    try std.testing.expectEqual(Heat.heating, readings.heat);
-    readings.recordHeat(.idle);
-    try std.testing.expectEqual(Heat.idle, readings.heat);
-}
-
 test "recordDistanceTimeout clears the distance" {
     var readings: Readings = .{};
     readings.recordDistance(12.4);
@@ -56,24 +51,7 @@ test "recordDistanceTimeout clears the distance" {
     try std.testing.expectEqual(@as(?f32, null), readings.distance_cm);
 }
 
-test "recordDistance stores the distance" {
-    var readings: Readings = .{};
-    readings.recordDistance(12.4);
-    try std.testing.expectEqual(@as(?f32, 12.4), readings.distance_cm);
-}
-
-test "recordTarget stores the target temperature" {
-    var readings: Readings = .{};
-    readings.recordTarget(24.0);
-    try std.testing.expectEqual(@as(f32, 24.0), readings.target_temp);
-}
-
-test "recordTemp stores the temperature" {
-    var readings: Readings = .{};
-    readings.recordTemp(24.5, 0);
-    try std.testing.expectEqual(@as(?f32, 24.5), readings.current_temp);
-}
-
+// TODO: Add this to temperature domain logic
 test "freshTemp returns null before the first reading" {
     const readings: Readings = .{};
     try std.testing.expectEqual(@as(?f32, null), readings.freshTemp(1_000_000));

@@ -39,6 +39,7 @@ const Ticks = struct {
 };
 
 readings: *Readings,
+// TODO: should be part of temp sensor
 temp_sampler: timing.Sampler = .{},
 distance_ticker: Ticker = .{ .interval_us = DISTANCE_INTERVAL_US },
 telemetry_ticker: Ticker = .{ .interval_us = TELEMETRY_INTERVAL_US },

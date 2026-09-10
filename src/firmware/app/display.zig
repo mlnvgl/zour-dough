@@ -19,9 +19,13 @@ ticker: Ticker,
 pub fn init(pins: board.Pins, readings: *const Readings) !Self {
     try oled.init(pins.oled_sda, pins.oled_scl);
     oled.clear();
+    
     oled.textRow(2, &display_content.SPLASH_TOP);
     oled.textRow(4, &display_content.SPLASH_VER);
     try oled.flush();
+
+    time.sleep_ms(2000);
+
     return .{
         .readings = readings,
         .ticker = .{ .interval_us = REFRESH_INTERVAL_US },
