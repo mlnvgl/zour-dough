@@ -1,5 +1,7 @@
 const rp2xxx = @import("microzig").hal;
 const time = rp2xxx.time;
+
+// TODO: should not know anything about domain logic
 const Blink = @import("../../../domain/blink.zig");
 
 var gpio: rp2xxx.drivers.GPIO_Device = undefined;

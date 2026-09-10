@@ -24,6 +24,7 @@ pub const SAMPLE_INTERVAL_US: u64 = 250_000;
 
 pub const Command = enum { none, start_conversion, read_conversion };
 
+// TODO: Only used by temp sensor
 pub const Sampler = struct {
     due_us: u64 = 0,
     converting: bool = false,

@@ -25,11 +25,13 @@ pub fn decide(temp: ?f32, target: f32, power_state: PowerState, current: HeaterS
             // No reading yet: never heat blind.
             const t = temp orelse return .idle;
 
+            //TODO: Still heating even when temperature is alreay reached
             if (t <= target - HYSTERESIS) return switch (current) {
                 // Already heating: keep the original start of this stint.
                 .heating => current,
                 else => .{ .heating = .{ .since_us = now_us } },
             };
+
             if (t >= target + HYSTERESIS) return .idle;
             return switch (current) {
                 // Power is back on but nothing demands heat yet.
