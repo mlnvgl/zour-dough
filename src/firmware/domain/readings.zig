@@ -17,7 +17,7 @@ pub const Readings = struct {
         self.current_temp = temp;
         self.temp_read_at_us = now_us;
     }
-    
+
     // TODO: This should not be part of the Readings
     pub fn freshTemp(self: Readings, now_us: u64) ?f32 {
         const temp = self.current_temp orelse return null;
