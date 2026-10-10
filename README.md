@@ -21,7 +21,6 @@ Requires Zig 0.15.x:
 
 ```sh
 zig build
-zig build run-serial-logger
 ```
 
 ## Architecture

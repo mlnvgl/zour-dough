@@ -24,20 +24,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const serial_logger = b.addExecutable(.{
-        .name = "serial-logger",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tools/serial-logger.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    b.installArtifact(serial_logger);
-
-    const run_seriallogger_step = b.step("run-serial-logger", "runs serial logger script");
-    const run_seriallogger_cmd = b.addRunArtifact(serial_logger);
-    run_seriallogger_step.dependOn(&run_seriallogger_cmd.step);
-
     const test_files = [_][]const u8{
         "src/firmware/domain/power_switch_control.zig",
         "src/firmware/domain/heater_control.zig",
