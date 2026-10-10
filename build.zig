@@ -24,20 +24,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const flashy = b.addExecutable(.{
-        .name = "flashy",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tools/flash.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    b.installArtifact(flashy);
-
-    const run_flashy_step = b.step("run-flashy", "runs flash script");
-    const run_flashy_cmd = b.addRunArtifact(flashy);
-    run_flashy_step.dependOn(&run_flashy_cmd.step);
-
     const serial_logger = b.addExecutable(.{
         .name = "serial-logger",
         .root_module = b.createModule(.{
