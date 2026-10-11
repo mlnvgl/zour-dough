@@ -17,13 +17,10 @@ Detailed inventories:
 
 ## Development
 
-Requires Zig 0.15.x and `picotool`:
+Requires Zig 0.15.x:
 
 ```sh
-brew install picotool
 zig build
-zig build run-flashy
-zig build run-serial-logger
 ```
 
 ## Architecture

@@ -11,6 +11,12 @@ pub const microzig_options = microzig.Options{
     .interrupts = .{ .IO_IRQ_BANK0 = .{ .c = rotary.onGpioIrq } },
 };
 
+pub const std_options = microzig.std_options(.{});
+
+comptime {
+    _ = microzig.export_startup();
+}
+
 pub fn main() !void {
     const pins = board.apply();
 
